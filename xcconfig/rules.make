@@ -21,12 +21,6 @@ ifeq ($(PACKAGE),)
 PACKAGE=$(notdir $(shell pwd))
 endif
 
-# automagically lookup Swift files
-ifeq ($($(PACKAGE)_SWIFT_FILES),)
-$(PACKAGE)_SWIFT_FILES = \
-  $(filter-out Package.swift,$(wildcard *.swift) $(wildcard */*.swift))
-endif
-
 ifeq ($($(PACKAGE)_C_FILES),)
 $(PACKAGE)_C_FILES = $(wildcard *.c) $(wildcard */*.c)
 endif
@@ -34,18 +28,8 @@ endif
 # check whether main.swift is available, and set TYPE to `tool` or `library`
 # or if the package name contains mod_/mods_, set Apache module type
 ifeq ($($(PACKAGE)_TYPE),)
-  ifneq (,$(findstring main.swift,$($(PACKAGE)_SWIFT_FILES)))
-    $(PACKAGE)_TYPE = tool
-  else
-    ifeq (mod_,$(findstring mod_,$(PACKAGE)))
-      $(PACKAGE)_TYPE = ApacheCModule
-    else
-      ifeq (mods_,$(findstring mods_,$(PACKAGE)))
-        $(PACKAGE)_TYPE = ApacheSwiftModule
-      else
-        $(PACKAGE)_TYPE = library
-      endif
-    endif
+  ifeq (mod_,$(findstring mod_,$(PACKAGE)))
+    $(PACKAGE)_TYPE = ApacheCModule
   endif
 endif
 
@@ -53,15 +37,6 @@ endif
 #include actual rules file, depending on the available build tool
 
 ifeq ($(USE_XCODEBUILD),yes)
-include $(SELF_DIR)rules-xcodebuild.make
 else
-ifeq ($(USE_SPM),yes)
-
-include $(SELF_DIR)rules-spm.make
-
-else # got no Swift Package Manager, or disabled
-
 include $(SELF_DIR)rules-makefile.make
-
-endif
 endif
