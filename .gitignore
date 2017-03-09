@@ -81,4 +81,5 @@ Release
 *.o
 .[#]*
 [#]*.make[#]
+config.make
 
