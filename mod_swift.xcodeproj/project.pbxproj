@@ -7,20 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		E83AF9361E3E43190039F300 /* mod_swift.c in Sources */ = {isa = PBXBuildFile; fileRef = E83AF9331E3E43190039F300 /* mod_swift.c */; };
-		E83AF9371E3E43190039F300 /* ZzApache.c in Sources */ = {isa = PBXBuildFile; fileRef = E83AF9341E3E43190039F300 /* ZzApache.c */; };
-		E83AF9381E3E43190039F300 /* ZzApache.h in Headers */ = {isa = PBXBuildFile; fileRef = E83AF9351E3E43190039F300 /* ZzApache.h */; };
+		E8AF013D1E71A5070074266E /* mod_swift.c in Sources */ = {isa = PBXBuildFile; fileRef = E8AF013A1E71A5070074266E /* mod_swift.c */; };
+		E8AF013E1E71A5070074266E /* ZzApache.c in Sources */ = {isa = PBXBuildFile; fileRef = E8AF013B1E71A5070074266E /* ZzApache.c */; };
+		E8AF013F1E71A5070074266E /* ZzApache.h in Headers */ = {isa = PBXBuildFile; fileRef = E8AF013C1E71A5070074266E /* ZzApache.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		E83AF8981E3E3F5C0039F300 /* mod_swift.so */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mod_swift.so; sourceTree = BUILT_PRODUCTS_DIR; };
 		E83AF92E1E3E42E40039F300 /* ApacheCModule.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ApacheCModule.xcconfig; sourceTree = "<group>"; };
-		E83AF92F1E3E42E40039F300 /* ApacheSwiftModule.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ApacheSwiftModule.xcconfig; sourceTree = "<group>"; };
 		E83AF9301E3E42E40039F300 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		E83AF9321E3E430F0039F300 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		E83AF9331E3E43190039F300 /* mod_swift.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mod_swift.c; path = Sources/mod_swift.c; sourceTree = "<group>"; };
-		E83AF9341E3E43190039F300 /* ZzApache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ZzApache.c; path = Sources/ZzApache.c; sourceTree = "<group>"; };
-		E83AF9351E3E43190039F300 /* ZzApache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZzApache.h; path = Sources/ZzApache.h; sourceTree = "<group>"; };
+		E8AF013A1E71A5070074266E /* mod_swift.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mod_swift.c; sourceTree = "<group>"; };
+		E8AF013B1E71A5070074266E /* ZzApache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ZzApache.c; sourceTree = "<group>"; };
+		E8AF013C1E71A5070074266E /* ZzApache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZzApache.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,7 +55,6 @@
 			isa = PBXGroup;
 			children = (
 				E83AF92E1E3E42E40039F300 /* ApacheCModule.xcconfig */,
-				E83AF92F1E3E42E40039F300 /* ApacheSwiftModule.xcconfig */,
 				E83AF9301E3E42E40039F300 /* Base.xcconfig */,
 			);
 			name = Configurations;
@@ -66,9 +64,9 @@
 		E83AF9311E3E43060039F300 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				E83AF9331E3E43190039F300 /* mod_swift.c */,
-				E83AF9351E3E43190039F300 /* ZzApache.h */,
-				E83AF9341E3E43190039F300 /* ZzApache.c */,
+				E8AF013A1E71A5070074266E /* mod_swift.c */,
+				E8AF013C1E71A5070074266E /* ZzApache.h */,
+				E8AF013B1E71A5070074266E /* ZzApache.c */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -80,7 +78,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E83AF9381E3E43190039F300 /* ZzApache.h in Headers */,
+				E8AF013F1E71A5070074266E /* ZzApache.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -142,8 +140,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E83AF9361E3E43190039F300 /* mod_swift.c in Sources */,
-				E83AF9371E3E43190039F300 /* ZzApache.c in Sources */,
+				E8AF013E1E71A5070074266E /* ZzApache.c in Sources */,
+				E8AF013D1E71A5070074266E /* mod_swift.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
