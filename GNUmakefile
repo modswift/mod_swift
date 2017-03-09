@@ -1,5 +1,9 @@
 # GNUmakefile
 
-PACKAGE_DIR=.
+include xcconfig/config.make
+-include config.make
 
-include $(PACKAGE_DIR)/xcconfig/rules.make
+PACKAGE = mod_swift
+CFILES  = mod_swift.c ZzApache.c
+
+include xcconfig/rules-apxs.make

@@ -1,10 +1,6 @@
 # GNUmakefile
 
-debug=on
-xcodebuild=no
-brew=yes
-
-NOZE_DID_INCLUDE_CONFIG_MAKE=yes
+prefix=/usr/local
 
 # Common configurations
 
@@ -43,14 +39,8 @@ endif
 USE_BREW=no
 
 ifeq ($(UNAME_S),Darwin)
-  ifeq ($(USE_APXS),no)
-    xcodebuild=yes
-  endif
-
-  # platform settings
-
   SHARED_LIBRARY_SUFFIX=.dylib
-  DEFAULT_SDK=$(shell xcrun -sdk macosx --show-sdk-path)
+  APACHE_MODULE_SUFFIX:=.so # yes
 
   ifeq ($(USE_APXS),yes)
     APXS_EXTRA_CFLAGS += -Wno-nullability-completeness
@@ -67,19 +57,13 @@ ifeq ($(UNAME_S),Darwin)
     endif
   endif
 else # Linux
-  xcode=no
-
-  # determine linux version
   OS=$(shell lsb_release -si | tr A-Z a-z)
   VER=$(shell lsb_release -sr)
 
   SHARED_LIBRARY_SUFFIX=.so
 endif
 
-
-ifeq ($(xcodebuild),yes)
-  USE_XCODEBUILD=yes
-endif
+APACHE_MODULE_SUFFIX=$(SHARED_LIBRARY_SUFFIX)
 
 
 # APR/APU default setup (Homebrew handled above)
@@ -111,6 +95,3 @@ ifeq ($(debug),on)
   APXS_EXTRA_CFLAGS  += -g
   APXS_EXTRA_LDFLAGS += -g
 endif
-
-SWIFT_REL_BUILD_DIR=.libs
-SWIFT_BUILD_DIR=$(PACKAGE_DIR)/$(SWIFT_REL_BUILD_DIR)
