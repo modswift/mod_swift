@@ -4,10 +4,12 @@ APXS_OUTDIR = .libs
 APACHE_C_MODULE_BUILD_RESULT = $(APXS_OUTDIR)/$(PACKAGE)$(APACHE_MODULE_SUFFIX)
 APACHE_C_MODULE_INSTALL_NAME = $(PACKAGE)$(APACHE_MODULE_SUFFIX)
 
-all : $(APACHE_C_MODULE_BUILD_RESULT)
+MOD_SWIFT_PKGCONFIG = $(APXS_OUTDIR)/$(PACKAGE).pc
+
+all : $(APACHE_C_MODULE_BUILD_RESULT) $(MOD_SWIFT_PKGCONFIG)
 
 clean :
-	rm -f $(APACHE_C_MODULE_BUILD_RESULT) \
+	rm -f $(APACHE_C_MODULE_BUILD_RESULT) $(MOD_SWIFT_PKGCONFIG) \
 		*.lo *.o *.slo *.la *.lo \
 		$(APXS_OUTDIR)/*.o   \
 		$(APXS_OUTDIR)/*.a   \
@@ -19,12 +21,18 @@ distclean : clean
 	rm -rf .libs
 	rm -f config.make
 
-install : $(APACHE_C_MODULE_BUILD_RESULT)
+# TODO: prefix should be the parent, then $prefix/libexec, $prefix/lib/pkgconfig
+install : all
 	cp $(APACHE_C_MODULE_BUILD_RESULT) \
 	   $(prefix)/$(APACHE_C_MODULE_INSTALL_NAME)
+	#cp $(MOD_SWIFT_PKGCONFIG) \
+	#   $(prefix)/$(APACHE_C_MODULE_INSTALL_NAME)
 
 uninstall :
 	rm -f $(prefix)/$(APACHE_C_MODULE_INSTALL_NAME)
+
+
+# actual rules
 
 ifeq ($(USE_APXS),no)
   ifeq ($(UNAME_S),Darwin)
@@ -49,3 +57,5 @@ $(APACHE_C_MODULE_BUILD_RESULT) : $(CFILES)
 	  -o $(PACKAGE).so \
           -c $(CFILES)
 
+$(MOD_SWIFT_PKGCONFIG) :
+	touch "$(MOD_SWIFT_PKGCONFIG)"
