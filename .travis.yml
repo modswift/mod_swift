@@ -1,0 +1,18 @@
+language:  generic
+
+notifications:
+    slack: nozeio:LIFY1Jtkx0FRcLq3u1WliHRZ
+
+matrix:
+    include:
+        - os:   Linux
+          dist: trusty
+          sudo: required
+        - os:   osx
+          osx_image: xcode8.2
+
+before_install:
+    - ./.travis.d/before-install.sh
+
+script:
+    - make all
