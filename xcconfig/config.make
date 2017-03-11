@@ -1,7 +1,5 @@
 # GNUmakefile
 
-prefix=/usr/local
-
 # Common configurations
 
 SHARED_LIBRARY_PREFIX=lib
@@ -31,6 +29,10 @@ ifeq ($(USE_APXS),yes)
 
   APXS_EXTRA_CFLAGS=
   APXS_EXTRA_LDFLAGS=
+
+  ifeq ($(prefix),)
+    prefix = $(shell $(APXS) -q exp_libexecdir)
+  endif
 endif
 
 
@@ -56,14 +58,24 @@ ifeq ($(UNAME_S),Darwin)
       endif
     endif
   endif
+  
+  ifeq ($(prefix),)
+    prefix = /usr/libexec/apache2
+  endif
 else # Linux
   OS=$(shell lsb_release -si | tr A-Z a-z)
   VER=$(shell lsb_release -sr)
 
   SHARED_LIBRARY_SUFFIX=.so
+
+  ifeq ($(prefix),)
+    prefix = /usr/lib/apache2/modules
+  endif
 endif
 
+ifeq ($(APACHE_MODULE_SUFFIX),)
 APACHE_MODULE_SUFFIX=$(SHARED_LIBRARY_SUFFIX)
+endif
 
 
 # APR/APU default setup (Homebrew handled above)

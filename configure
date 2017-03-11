@@ -9,7 +9,8 @@ ARG_PREFIX=""
 ARG_CFGMAKE="$PWD/config.make"
 ARG_WITH_DEBUG=1
 ARG_WITH_STRIP=1
-ARG_APXS=""
+ARG_WITH_APXS=1
+ARG_APXS="NOTSET"
 
 # ******************** usage ********************
 
@@ -78,9 +79,23 @@ function genConfigMake() {
     cfgwrite "APXS:=${ARG_APXS}"
     cfgwrite ""
   fi
+
+  if [ -n "$ARG_PREFIX" ]; then
+    cfgwrite "prefix:=${ARG_PREFIX}"
+    cfgwrite ""
+  fi
 }
 
 function runIt() {
+  if test "$ARG_APXS" = "NOTSET"; then
+    ARG_APXS="`which apxs`";
+  fi
+  if [ -z "$ARG_PREFIX" ]; then
+    if [ -n "$ARG_APXS" ]; then
+      ARG_PREFIX="`${ARG_APXS} -q exp_libexecdir`"
+    fi
+  fi
+	
   genConfigMake;
 }
 
@@ -93,29 +108,35 @@ function extractFuncValue() {
 function processOption() {
   case "x$1" in
     "x--help"|"x-h")
-	usage;
-	;;
+        usage;
+        ;;
     "x--quiet"|"x--silent"|"x-q") ARG_BEQUIET=1;  ;;
     x--prefix=*)
-	extractFuncValue $1;
+        extractFuncValue $1;
         ARG_PREFIX="$VALUE";
-	;;
+        ;;
     x--with-apxs=*)
-	extractFuncValue $1;
+        extractFuncValue $1;
         ARG_APXS="$VALUE";
-	;;
+        ;;
+    "x--with-apxs")
+        ARG_APXS="`which apxs`";
+        ;;
+    "x--without-apxs")
+        ARG_APXS="";
+        ;;
     "x--enable-debug")
         ARG_WITH_DEBUG=1
-	;;
+        ;;
     "x--disable-debug")
         ARG_WITH_DEBUG=0
-	;;
+        ;;
     "x--enable-strip")
         ARG_WITH_STRIP=1
-	;;
+        ;;
     "x--disable-strip")
         ARG_WITH_STRIP=0
-	;;
+        ;;
 
     *) echo "error: cannot process argument: $1"; exit 1; ;;
   esac

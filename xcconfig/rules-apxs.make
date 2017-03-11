@@ -1,7 +1,8 @@
 # GNUmakefile
 
 APXS_OUTDIR = .libs
-APACHE_C_MODULE_BUILD_RESULT = $(APXS_OUTDIR)/$(PACKAGE).$(APACHE_MODULE_SUFFIX)
+APACHE_C_MODULE_BUILD_RESULT = $(APXS_OUTDIR)/$(PACKAGE)$(APACHE_MODULE_SUFFIX)
+APACHE_C_MODULE_INSTALL_NAME = $(PACKAGE)$(APACHE_MODULE_SUFFIX)
 
 all : $(APACHE_C_MODULE_BUILD_RESULT)
 
@@ -18,7 +19,12 @@ distclean : clean
 	rm -rf .libs
 	rm -f config.make
 
-install :
+install : $(APACHE_C_MODULE_BUILD_RESULT)
+	cp $(APACHE_C_MODULE_BUILD_RESULT) \
+	   $(prefix)/$(APACHE_C_MODULE_INSTALL_NAME)
+
+uninstall :
+	rm -f $(prefix)/$(APACHE_C_MODULE_INSTALL_NAME)
 
 ifeq ($(USE_APXS),no)
   ifeq ($(UNAME_S),Darwin)
