@@ -86,6 +86,16 @@ ifeq ($(debug),on)
 endif
 
 
+# APR and APU configs
+
+ifeq ($(USE_APXS),yes)
+  PKGCONFIG_INCLUDE_DIRS += \
+  	$(shell apxs -q INCLUDEDIR) \
+	$(shell apxs -q APR_INCLUDEDIR) \
+	$(shell apxs -q APU_INCLUDEDIR)
+endif
+
+
 # We have set prefix above, or we got it via ./config.make
 # Now we need to derive:
 # - APACHE_MODULE_INSTALL_DIR

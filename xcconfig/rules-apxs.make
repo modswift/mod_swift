@@ -85,6 +85,12 @@ PACKAGE_VERSION_STRING=0.0.1
 
 // TODO: add APR locs etc
 
+PKGCONFIG_CFLAGS = \
+	"-I\$${includedir}" \
+	$(addprefix -I,$(PKGCONFIG_INCLUDE_DIRS))
+
+# Also: libs. Not served by apxs which doesn't need libs, but we might still
+#.      want to do those for apr/apu apps?
 $(PACKAGE_PKGCONFIG) : $(wildcard config.make)
 	@echo "prefix=$(prefix)" > "$(PACKAGE_PKGCONFIG)"
 	@echo "includedir=$(HEADER_FILES_INSTALL_DIR)" >> "$(PACKAGE_PKGCONFIG)"
@@ -93,5 +99,4 @@ $(PACKAGE_PKGCONFIG) : $(wildcard config.make)
 	@echo "Name: $(PACKAGE)" >> "$(PACKAGE_PKGCONFIG)"
 	@echo "Description: $(PACKAGE_DESCRIPTION)" >> "$(PACKAGE_PKGCONFIG)"
 	@echo "Version: $(PACKAGE_VERSION_STRING)" >> "$(PACKAGE_PKGCONFIG)"
-	#@echo "Libs:" >> "$(PACKAGE_PKGCONFIG)"
-	@echo "Cflags: -I\$${includedir} -I\$${includedir}/apr-1 -I\$${includedir}/apache2" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "Cflags: $(PKGCONFIG_CFLAGS)" >> "$(PACKAGE_PKGCONFIG)"
