@@ -91,9 +91,7 @@ function runIt() {
     ARG_APXS="`which apxs`";
   fi
   if [ -z "$ARG_PREFIX" ]; then
-    if [ -n "$ARG_APXS" ]; then
-      ARG_PREFIX="`${ARG_APXS} -q exp_libexecdir`"
-    fi
+    ARG_PREFIX=/usr/local
   fi
 	
   genConfigMake;

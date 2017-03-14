@@ -2,17 +2,26 @@
 
 # Common configurations
 
+ifeq ($(prefix),)
+  prefix=/usr/local
+endif
+
 SHARED_LIBRARY_PREFIX=lib
+
+MKDIR_P = mkdir -p
 
 UNAME_S := $(shell uname -s)
 
 # Apache stuff
 
-APXS=$(shell which apxs)
+ifeq ($(APXS),)
+  APXS=$(shell which apxs)
+endif
 ifneq ($(APXS),)
   HAVE_APXS=yes
   ifeq ($(UNAME_S),Darwin)
     ifeq (/usr/sbin/apxs,$(APXS)) # this one is utterly b0rked
+      # TBD: really? I think it may be OK for some systems (10.11 w/ sysapache?)
       HAVE_APXS=no
     endif
   endif
@@ -22,17 +31,13 @@ endif
 USE_APXS=$(HAVE_APXS)
 
 ifeq ($(USE_APXS),yes)
-  APACHE_INCLUDE_DIRS += $(shell $(APXS) -q INCLUDEDIR)
-  APACHE_CFLAGS       += $(shell $(APXS) -q CFLAGS)
-  APACHE_CFLAGS_SHLIB += $(shell $(APXS) -q CFLAGS_SHLIB)
-  APACHE_LD_SHLIB     += $(shell $(APXS) -q LD_SHLIB)
+  # APACHE_INCLUDE_DIRS += $(shell $(APXS) -q INCLUDEDIR)
+  # APACHE_CFLAGS       += $(shell $(APXS) -q CFLAGS)
+  # APACHE_CFLAGS_SHLIB += $(shell $(APXS) -q CFLAGS_SHLIB)
+  # APACHE_LD_SHLIB     += $(shell $(APXS) -q LD_SHLIB)
 
   APXS_EXTRA_CFLAGS=
   APXS_EXTRA_LDFLAGS=
-
-  ifeq ($(prefix),)
-    prefix = $(shell $(APXS) -q exp_libexecdir)
-  endif
 endif
 
 
@@ -48,12 +53,10 @@ ifeq ($(UNAME_S),Darwin)
     APXS_EXTRA_CFLAGS += -Wno-nullability-completeness
 
     ifneq ($(brew),no)
-      BREW=$(shell which brew)
+      ifeq ($(BREW),)
+        BREW=$(shell which brew)
+      endif
       ifneq (,$(BREW)) # use Homebrew locations
-        BREW_APR_LOCATION=$(shell $(BREW) --prefix apr)
-        BREW_APU_LOCATION=$(shell $(BREW) --prefix apr-util)
-        APR_CONFIG=$(wildcard $(BREW_APR_LOCATION)/bin/apr-1-config)
-        APU_CONFIG=$(wildcard $(BREW_APU_LOCATION)/bin/apu-1-config)
         USE_BREW=yes
       endif
     endif
@@ -63,41 +66,15 @@ ifeq ($(UNAME_S),Darwin)
     prefix = /usr/libexec/apache2
   endif
 else # Linux
-  OS=$(shell lsb_release -si | tr A-Z a-z)
-  VER=$(shell lsb_release -sr)
+  # e.g.: OS=ubuntu VER=14.04
+  # OS=$(shell lsb_release -si | tr A-Z a-z)
+  # VER=$(shell lsb_release -sr)
 
   SHARED_LIBRARY_SUFFIX=.so
-
-  ifeq ($(prefix),)
-    prefix = /usr/lib/apache2/modules
-  endif
 endif
 
 ifeq ($(APACHE_MODULE_SUFFIX),)
-APACHE_MODULE_SUFFIX=$(SHARED_LIBRARY_SUFFIX)
-endif
-
-
-# APR/APU default setup (Homebrew handled above)
-
-ifeq (,$(APR_CONFIG))
-  APR_CONFIG=$(shell which apr-1-config)
-  ifeq (,$(APU_CONFIG))
-    APU_CONFIG=$(shell which apu-1-config)
-  endif
-endif
-ifneq (,$(APR_CONFIG))
-  APR_INCLUDE_DIRS = $(shell $(APR_CONFIG) --includedir)
-  APR_CFLAGS       = $(shell $(APR_CONFIG) --cflags)
-  APR_LDFLAGS      = $(shell $(APR_CONFIG) --ldflags)
-  APR_LIBS         = $(shell $(APR_CONFIG) --libs)
-
-  ifneq (,$(APU_CONFIG))
-    APR_INCLUDE_DIRS += $(shell $(APU_CONFIG) --includedir)
-    # APU has no --cflags
-    APR_LDFLAGS += $(shell $(APU_CONFIG) --ldflags)
-    APR_LIBS    += $(shell $(APU_CONFIG) --libs)
-  endif
+  APACHE_MODULE_SUFFIX=$(SHARED_LIBRARY_SUFFIX)
 endif
 
 
@@ -106,4 +83,33 @@ endif
 ifeq ($(debug),on)
   APXS_EXTRA_CFLAGS  += -g
   APXS_EXTRA_LDFLAGS += -g
+endif
+
+
+# We have set prefix above, or we got it via ./config.make
+# Now we need to derive:
+# - APACHE_MODULE_INSTALL_DIR
+# - HEADER_FILES_INSTALL_DIR
+# - PKGCONFIG_INSTALL_DIR
+
+ifeq ($(APACHE_MODULE_INSTALL_DIR),)
+  ifeq ($(USE_APXS),yes)
+    # Hm, with brew apxs this just has `libexec` instead of `libexec/apache2`
+    # On Trusty it has the full path (${exec_prefix}/lib/apache2/modules)
+    APACHE_MODULE_RELDIR=$(shell apxs -q | grep ^libexecdir | sed "s/libexecdir=.*}//g" )
+  else
+    ifeq ($(UNAME_S),Darwin)
+      APACHE_MODULE_RELDIR="/libexec/apache2"
+    else # Linux: this may be different depending on the distro
+      APACHE_MODULE_RELDIR="/lib/apache2/modules"
+    endif
+  endif
+  APACHE_MODULE_INSTALL_DIR=$(prefix)$(APACHE_MODULE_RELDIR)
+endif
+ifeq ($(HEADER_FILES_INSTALL_DIR),)
+  HEADER_FILES_INSTALL_DIR=$(prefix)/include
+endif
+ifeq ($(PKGCONFIG_INSTALL_DIR),)
+  # on Trusty most live in lib/x86_64-linux-gnu/pkgconfig. TBD
+  PKGCONFIG_INSTALL_DIR=$(prefix)/lib/pkgconfig
 endif
