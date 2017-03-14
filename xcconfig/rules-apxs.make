@@ -14,6 +14,8 @@ APXS_OUTDIR = .libs
 APACHE_C_MODULE_BUILD_RESULT = $(APXS_OUTDIR)/$(PACKAGE)$(APACHE_MODULE_SUFFIX)
 APACHE_C_MODULE_INSTALL_NAME = $(PACKAGE)$(APACHE_MODULE_SUFFIX)
 
+PACKAGE_PKGCONFIG = $(APXS_OUTDIR)/$(PACKAGE).pc
+
 HEADER_FILES_INSTALL_PATHES = $(addprefix $(HEADER_FILES_INSTALL_DIR)/,$(HFILES))
 
 APXS_BUILD_FILES = \
@@ -28,19 +30,10 @@ APXS_BUILD_FILES = \
 	$(APXS_OUTDIR)/$(PACKAGE).lai	\
 	$(addprefix $(APXS_OUTDIR)/,$(CFILES:.c=.o))
 
-all : $(APACHE_C_MODULE_BUILD_RESULT)
+all : $(APACHE_C_MODULE_BUILD_RESULT) $(PACKAGE_PKGCONFIG)
 
 clean :
-	rm -f $(APXS_BUILD_FILES)
-
-clean-old:
-	rm -f $(APACHE_C_MODULE_BUILD_RESULT) \
-		*.lo *.o *.slo *.la *.lo \
-		$(APXS_OUTDIR)/*.o   \
-		$(APXS_OUTDIR)/*.a   \
-		$(APXS_OUTDIR)/*.lai \
-		$(APXS_OUTDIR)/*.la  \
-		$(APXS_OUTDIR)/*.so
+	rm -f $(APXS_BUILD_FILES) $(PACKAGE_PKGCONFIG)
 
 distclean : clean
 	rm -rf .libs
@@ -73,6 +66,7 @@ $(APACHE_C_MODULE_BUILD_RESULT) : $(CFILES)
 	  -o $(PACKAGE).so \
           -c $(CFILES)
 
+
 # config test
 
 testconfig:
@@ -82,3 +76,27 @@ testconfig:
 	@echo "Install module in:  $(APACHE_MODULE_INSTALL_DIR)"
 	@echo "Install headers in: $(HEADER_FILES_INSTALL_DIR)"
 	@echo "Install pc in:      $(PKGCONFIG_INSTALL_DIR)"
+
+
+# pkg config
+
+// TODO:
+PACKAGE_VERSION_STRING=0.0.1
+
+// TODO: add APR locs etc
+
+PKGCONFIG_CFLAGS = \
+	"-I\$${includedir}" \
+	$(addprefix -I,$(PKGCONFIG_INCLUDE_DIRS))
+
+# Also: libs. Not served by apxs which doesn't need libs, but we might still
+#.      want to do those for apr/apu apps?
+$(PACKAGE_PKGCONFIG) : $(wildcard config.make)
+	@echo "prefix=$(prefix)" > "$(PACKAGE_PKGCONFIG)"
+	@echo "includedir=$(HEADER_FILES_INSTALL_DIR)" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "libdir=$(prefix)/lib" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "Name: $(PACKAGE)" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "Description: $(PACKAGE_DESCRIPTION)" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "Version: $(PACKAGE_VERSION_STRING)" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "Cflags: $(PKGCONFIG_CFLAGS)" >> "$(PACKAGE_PKGCONFIG)"
