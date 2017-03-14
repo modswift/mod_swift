@@ -14,7 +14,7 @@ APXS_OUTDIR = .libs
 APACHE_C_MODULE_BUILD_RESULT = $(APXS_OUTDIR)/$(PACKAGE)$(APACHE_MODULE_SUFFIX)
 APACHE_C_MODULE_INSTALL_NAME = $(PACKAGE)$(APACHE_MODULE_SUFFIX)
 
-MOD_SWIFT_PKGCONFIG = $(APXS_OUTDIR)/$(PACKAGE).pc
+PACKAGE_PKGCONFIG = $(APXS_OUTDIR)/$(PACKAGE).pc
 
 HEADER_FILES_INSTALL_PATHES = $(addprefix $(HEADER_FILES_INSTALL_DIR)/,$(HFILES))
 
@@ -30,10 +30,10 @@ APXS_BUILD_FILES = \
 	$(APXS_OUTDIR)/$(PACKAGE).lai	\
 	$(addprefix $(APXS_OUTDIR)/,$(CFILES:.c=.o))
 
-all : $(APACHE_C_MODULE_BUILD_RESULT) $(MOD_SWIFT_PKGCONFIG)
+all : $(APACHE_C_MODULE_BUILD_RESULT) $(PACKAGE_PKGCONFIG)
 
 clean :
-	rm -f $(APXS_BUILD_FILES) $(MOD_SWIFT_PKGCONFIG)
+	rm -f $(APXS_BUILD_FILES) $(PACKAGE_PKGCONFIG)
 
 distclean : clean
 	rm -rf .libs
@@ -67,12 +67,6 @@ $(APACHE_C_MODULE_BUILD_RESULT) : $(CFILES)
           -c $(CFILES)
 
 
-# TODO: pkgconfig
-
-$(MOD_SWIFT_PKGCONFIG) :
-	touch "$(MOD_SWIFT_PKGCONFIG)"
-
-
 # config test
 
 testconfig:
@@ -83,3 +77,21 @@ testconfig:
 	@echo "Install headers in: $(HEADER_FILES_INSTALL_DIR)"
 	@echo "Install pc in:      $(PKGCONFIG_INSTALL_DIR)"
 
+
+# pkg config
+
+// TODO:
+PACKAGE_VERSION_STRING=0.0.1
+
+// TODO: add APR locs etc
+
+$(PACKAGE_PKGCONFIG) : $(wildcard config.make)
+	@echo "prefix=$(prefix)" > "$(PACKAGE_PKGCONFIG)"
+	@echo "includedir=$(HEADER_FILES_INSTALL_DIR)" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "libdir=$(prefix)/lib" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "Name: $(PACKAGE)" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "Description: $(PACKAGE_DESCRIPTION)" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "Version: $(PACKAGE_VERSION_STRING)" >> "$(PACKAGE_PKGCONFIG)"
+	#@echo "Libs:" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "Cflags: -I\$${includedir} -I\$${includedir}/apr-1 -I\$${includedir}/apache2" >> "$(PACKAGE_PKGCONFIG)"
