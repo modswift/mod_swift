@@ -39,7 +39,7 @@ distclean : clean
 	rm -rf .libs
 	rm -f config.make
 
-install : $(APACHE_C_MODULE_BUILD_RESULT)
+install : all
 	$(MKDIR_P) $(APACHE_MODULE_INSTALL_DIR)
 	$(MKDIR_P) $(HEADER_FILES_INSTALL_DIR)
 	$(MKDIR_P) $(PKGCONFIG_INSTALL_DIR)
