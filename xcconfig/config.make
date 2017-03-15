@@ -21,8 +21,7 @@ ifneq ($(APXS),)
   HAVE_APXS=yes
   ifeq ($(UNAME_S),Darwin)
     ifeq (/usr/sbin/apxs,$(APXS)) # this one is utterly b0rked
-      # TBD: really? I think it may be OK for some systems (10.11 w/ sysapache?)
-      HAVE_APXS=no
+      $(warning "Using system Apache apxs - brew version is recommended!")
     endif
   endif
 else
