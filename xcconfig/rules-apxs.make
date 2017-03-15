@@ -80,10 +80,7 @@ testconfig:
 
 # pkg config
 
-// TODO:
-PACKAGE_VERSION_STRING=0.0.1
-
-// TODO: add APR locs etc
+PACKAGE_VERSION_STRING=$(MAJOR).$(MINOR).$(SUBMINOR)
 
 PKGCONFIG_CFLAGS = \
 	"-I\$${includedir}" \
