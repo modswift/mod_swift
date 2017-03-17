@@ -8,8 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		E8AF013D1E71A5070074266E /* mod_swift.c in Sources */ = {isa = PBXBuildFile; fileRef = E8AF013A1E71A5070074266E /* mod_swift.c */; };
-		E8AF013E1E71A5070074266E /* ZzApache.c in Sources */ = {isa = PBXBuildFile; fileRef = E8AF013B1E71A5070074266E /* ZzApache.c */; };
-		E8AF013F1E71A5070074266E /* ZzApache.h in Headers */ = {isa = PBXBuildFile; fileRef = E8AF013C1E71A5070074266E /* ZzApache.h */; };
+		E8AF01421E7BFF220074266E /* mod_swift_api.c in Sources */ = {isa = PBXBuildFile; fileRef = E8AF01401E7BFF220074266E /* mod_swift_api.c */; };
+		E8AF01431E7BFF220074266E /* mod_swift.h in Headers */ = {isa = PBXBuildFile; fileRef = E8AF01411E7BFF220074266E /* mod_swift.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,8 +18,8 @@
 		E83AF9301E3E42E40039F300 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		E83AF9321E3E430F0039F300 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E8AF013A1E71A5070074266E /* mod_swift.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mod_swift.c; sourceTree = "<group>"; };
-		E8AF013B1E71A5070074266E /* ZzApache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ZzApache.c; sourceTree = "<group>"; };
-		E8AF013C1E71A5070074266E /* ZzApache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZzApache.h; sourceTree = "<group>"; };
+		E8AF01401E7BFF220074266E /* mod_swift_api.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mod_swift_api.c; sourceTree = "<group>"; };
+		E8AF01411E7BFF220074266E /* mod_swift.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mod_swift.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,8 +65,8 @@
 			isa = PBXGroup;
 			children = (
 				E8AF013A1E71A5070074266E /* mod_swift.c */,
-				E8AF013C1E71A5070074266E /* ZzApache.h */,
-				E8AF013B1E71A5070074266E /* ZzApache.c */,
+				E8AF01401E7BFF220074266E /* mod_swift_api.c */,
+				E8AF01411E7BFF220074266E /* mod_swift.h */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -78,7 +78,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E8AF013F1E71A5070074266E /* ZzApache.h in Headers */,
+				E8AF01431E7BFF220074266E /* mod_swift.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,7 +140,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E8AF013E1E71A5070074266E /* ZzApache.c in Sources */,
+				E8AF01421E7BFF220074266E /* mod_swift_api.c in Sources */,
 				E8AF013D1E71A5070074266E /* mod_swift.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
