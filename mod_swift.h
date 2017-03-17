@@ -3,32 +3,32 @@
 // Created by Helge Hess on 23/01/2017.
 //
 
-#ifndef __ZzApache_H__
-#define __ZzApache_H__
+#ifndef __mod_swift_H__
+#define __mod_swift_H__
 
 #include <httpd.h>
 
 #if defined(__clang__)
 #  if __linux__
-#    define ZzNonNull // hm? shouldn't that work on Linux? (3.8.0)
+#    define apz_non_null // hm? shouldn't that work on Linux? (3.8.0)
 #  else
-#    define ZzNonNull __nonnull
+#    define apz_non_null __nonnull
 #  endif
-#  define ZzSwiftName(__X__) __attribute__((swift_name(__X__)))
+#  define apz_swift_name(__X__) __attribute__((swift_name(__X__)))
 #else
-#  define ZzNonNull
-#  define ZzSwiftName(__X__)
+#  define apz_non_null
+#  define apz_swift_name(__X__)
 #endif
 
-#pragma mark ZzApacheRequest
+#pragma mark ApacheRequest
 
-struct ZzApacheRequest {
+struct ApacheRequest {
   // own struct which hides the swiftc-crash-prone Apache C structure
-  request_rec * ZzNonNull raw;
+  request_rec * apz_non_null raw;
 };
 
-extern struct ZzApacheRequest ZzApacheRequestCreate(void * ZzNonNull raw)
-                ZzSwiftName("ZzApacheRequest.init(raw:)");
+extern struct ApacheRequest ApacheRequestCreate(void * apz_non_null raw)
+                apz_swift_name("ApacheRequest.init(raw:)");
 
 
 #pragma mark Logging
@@ -54,4 +54,4 @@ extern void apz_brigade_insert_tail(apr_bucket_brigade *bb, apr_bucket *b);
 
 extern apr_status_t apz_register_swift_module(void *cmd, void *module);
 
-#endif /* __ZzApache_H__ */
+#endif /* __mod_swift_H__ */

@@ -14,8 +14,8 @@
 #include <stdio.h>
 #include <assert.h>
 
-struct ZzApacheRequest ZzApacheRequestCreate(void *raw) {
-  struct ZzApacheRequest rq;
+struct ApacheRequest ApacheRequestCreate(void *raw) {
+  struct ApacheRequest rq;
   rq.raw = raw;
   // printf("called raw %p\n", raw);
   return rq;
