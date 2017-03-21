@@ -11,6 +11,8 @@ PACKAGE = mod_swift
 CFILES  = mod_swift.c mod_swift_api.c
 HFILES  = mod_swift.h
 
+SWIFT_SHIM_FILES = $(wildcard shims/*.h)
+
 PACKAGE_DESCRIPTION = "Swift language support for Apache"
 
 include xcconfig/rules-apxs.make

@@ -100,6 +100,9 @@ endif
 # - APACHE_MODULE_INSTALL_DIR
 # - HEADER_FILES_INSTALL_DIR
 # - PKGCONFIG_INSTALL_DIR
+# - XCCONFIG_INSTALL_DIR
+# - MODMAP_INSTALL_DIR
+# - SWIFT_SHIM_INSTALL_DIR
 
 ifeq ($(APACHE_MODULE_INSTALL_DIR),)
   ifeq ($(USE_APXS),yes)
@@ -121,4 +124,15 @@ endif
 ifeq ($(PKGCONFIG_INSTALL_DIR),)
   # on Trusty most live in lib/x86_64-linux-gnu/pkgconfig. TBD
   PKGCONFIG_INSTALL_DIR=$(prefix)/lib/pkgconfig
+endif
+
+ifeq ($(XCCONFIG_INSTALL_DIR),)
+  XCCONFIG_INSTALL_DIR=$(prefix)/lib/xcconfig
+endif
+ifeq ($(MODMAP_INSTALL_DIR),)
+  MODMAP_INSTALL_DIR=$(prefix)/lib/modmap
+endif
+
+ifeq ($(SWIFT_SHIM_INSTALL_DIR),)
+  SWIFT_SHIM_INSTALL_DIR=$(prefix)/lib/swift/shims
 endif

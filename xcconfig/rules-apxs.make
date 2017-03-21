@@ -15,8 +15,14 @@ APACHE_C_MODULE_BUILD_RESULT = $(APXS_OUTDIR)/$(PACKAGE)$(APACHE_MODULE_SUFFIX)
 APACHE_C_MODULE_INSTALL_NAME = $(PACKAGE)$(APACHE_MODULE_SUFFIX)
 
 PACKAGE_PKGCONFIG = $(APXS_OUTDIR)/$(PACKAGE).pc
+PACKAGE_XCCONFIG  = $(APXS_OUTDIR)/$(PACKAGE).xcconfig
+PACKAGE_MODMAP    = $(APXS_OUTDIR)/module.map
+PACKAGE_HELPERS   = $(PACKAGE_PKGCONFIG) $(PACKAGE_XCCONFIG) $(PACKAGE_MODMAP)
+
+PACKAGE_MODMAP_INSTALL_DIR = $(MODMAP_INSTALL_DIR)/$(PACKAGE)/
 
 HEADER_FILES_INSTALL_PATHES = $(addprefix $(HEADER_FILES_INSTALL_DIR)/,$(HFILES))
+SHIM_FILES_INSTALL_PATHES   = $(addprefix $(SWIFT_SHIM_INSTALL_DIR)/,$(notdir $(SWIFT_SHIM_FILES)))
 
 APXS_BUILD_FILES = \
 	$(APACHE_C_MODULE_BUILD_RESULT)	\
@@ -30,28 +36,39 @@ APXS_BUILD_FILES = \
 	$(APXS_OUTDIR)/$(PACKAGE).lai	\
 	$(addprefix $(APXS_OUTDIR)/,$(CFILES:.c=.o))
 
-all : $(APACHE_C_MODULE_BUILD_RESULT) $(PACKAGE_PKGCONFIG)
+all : $(APACHE_C_MODULE_BUILD_RESULT) $(PACKAGE_HELPERS)
 
 clean :
-	rm -f $(APXS_BUILD_FILES) $(PACKAGE_PKGCONFIG)
+	rm -f $(APXS_BUILD_FILES) $(PACKAGE_HELPERS)
 
 distclean : clean
 	rm -rf .libs
 	rm -f config.make
 
 install : all
-	$(MKDIR_P) $(APACHE_MODULE_INSTALL_DIR)
-	$(MKDIR_P) $(HEADER_FILES_INSTALL_DIR)
-	$(MKDIR_P) $(PKGCONFIG_INSTALL_DIR)
+	$(MKDIR_P) $(APACHE_MODULE_INSTALL_DIR) \
+		   $(HEADER_FILES_INSTALL_DIR)  \
+		   $(PKGCONFIG_INSTALL_DIR)	\
+		   $(XCCONFIG_INSTALL_DIR)	\
+		   $(SWIFT_SHIM_INSTALL_DIR)	\
+		   $(PACKAGE_MODMAP_INSTALL_DIR)
 	cp $(APACHE_C_MODULE_BUILD_RESULT) \
 	   $(APACHE_MODULE_INSTALL_DIR)/$(APACHE_C_MODULE_INSTALL_NAME)
 	cp $(HFILES) $(HEADER_FILES_INSTALL_DIR)/
+	cp $(SWIFT_SHIM_FILES) $(SWIFT_SHIM_INSTALL_DIR)/
 	cp $(PACKAGE_PKGCONFIG) $(PKGCONFIG_INSTALL_DIR)/
+	if test "$(UNAME_S)" = "Darwin"; then \
+	  cp $(PACKAGE_XCCONFIG)  $(XCCONFIG_INSTALL_DIR)/; \
+	  cp $(PACKAGE_MODMAP)    $(PACKAGE_MODMAP_INSTALL_DIR)/; \
+	fi
 
 uninstall :
 	rm -f $(APACHE_MODULE_INSTALL_DIR)/$(APACHE_C_MODULE_INSTALL_NAME) \
 	      $(HEADER_FILES_INSTALL_PATHES) \
-	      $(PKGCONFIG_INSTALL_DIR)/$(PACKAGE).pc
+	      $(SHIM_FILES_INSTALL_PATHES)   \
+	      $(PKGCONFIG_INSTALL_DIR)/$(PACKAGE).pc \
+	      $(XCCONFIG_INSTALL_DIR)/$(PACKAGE).xcconfig \
+	      $(PACKAGE_MODMAP_INSTALL_DIR)/module.map
 
 LIBTOOL_CPREFIX=-Wc,
 LIBTOOL_LDPREFIX=-Wl,
@@ -97,3 +114,55 @@ $(PACKAGE_PKGCONFIG) : $(wildcard config.make)
 	@echo "Description: $(PACKAGE_DESCRIPTION)" >> "$(PACKAGE_PKGCONFIG)"
 	@echo "Version: $(PACKAGE_VERSION_STRING)" >> "$(PACKAGE_PKGCONFIG)"
 	@echo "Cflags: $(PKGCONFIG_CFLAGS)" >> "$(PACKAGE_PKGCONFIG)"
+
+
+# xcconfig
+
+$(PACKAGE_XCCONFIG) : $(wildcard config.make)
+	@echo "// Xcode configuration set for mod_swift" > "$(PACKAGE_XCCONFIG)"
+	@echo "// generated on $(shell date)" >> "$(PACKAGE_XCCONFIG)"
+	@echo "" >> "$(PACKAGE_XCCONFIG)"
+	@echo "DYLIB_INSTALL_NAME_BASE = $(shell $(APXS) -q exp_libexecdir)" >> "$(PACKAGE_XCCONFIG)"
+	@echo "EXECUTABLE_EXTENSION    = so" >> "$(PACKAGE_XCCONFIG)"
+	@echo "EXECUTABLE_PREFIX       = "   >> "$(PACKAGE_XCCONFIG)"
+	@echo "" >> "$(PACKAGE_XCCONFIG)"
+	@echo "HEADER_SEARCH_PATHS     = \$$(inherited) $(HEADER_FILES_INSTALL_DIR) $(PKGCONFIG_INCLUDE_DIRS)" >> "$(PACKAGE_XCCONFIG)"
+	@echo "LIBRARY_SEARCH_PATHS    = \$$(inherited) \$$(TOOLCHAIN_DIR)/usr/lib/swift/macosx \$$(BUILT_PRODUCTS_DIR)" >> "$(PACKAGE_XCCONFIG)"
+	@echo "LD_RUNPATH_SEARCH_PATHS = \$$(inherited) \$$(TOOLCHAIN_DIR)/usr/lib/swift/macosx \$$(BUILT_PRODUCTS_DIR)" >> "$(PACKAGE_XCCONFIG)"
+	@echo "" >> "$(PACKAGE_XCCONFIG)"
+	@echo "OTHER_CFLAGS            = \$$(inherited) $(shell $(APXS) -q EXTRA_CPPFLAGS)" >> "$(PACKAGE_XCCONFIG)"
+	@echo "" >> "$(PACKAGE_XCCONFIG)"
+	@echo "// Note: Apache headers use documentation but using a different style" >> "$(PACKAGE_XCCONFIG)"
+	@echo "CLANG_WARN_DOCUMENTATION_COMMENTS = NO" >> "$(PACKAGE_XCCONFIG)"
+	@echo "" >> "$(PACKAGE_XCCONFIG)"
+	# Ok, this is a little crazy. When using the Apache2 modmap, the linker
+	# can't resolve -lswiftDarwin.a anymore even though it seems to pass in
+	# a proper -L
+	# Fix: specify absolute path to .a above
+	@echo "SWIFT_INCLUDE_PATHS     = \$$(inherited) $(PACKAGE_MODMAP_INSTALL_DIR) \$$(TOOLCHAIN_DIR)/usr/lib/swift" >> "$(PACKAGE_XCCONFIG)"
+	
+# modmap
+
+$(PACKAGE_MODMAP) : $(wildcard config.make)
+	@echo "// mod_swift module.map for Apache 2" > "$(PACKAGE_MODMAP)"
+	@echo "// generated on $(shell date)" >> "$(PACKAGE_MODMAP)"
+	@echo "" >> "$(PACKAGE_MODMAP)"
+	@echo "module CAPR [system] {" >> "$(PACKAGE_MODMAP)"
+	@echo "  header \"$(SWIFT_SHIM_INSTALL_DIR)/APRShim.h\"" >> "$(PACKAGE_MODMAP)"
+	@echo "  link \"apr-1\"" >> "$(PACKAGE_MODMAP)"
+	@echo "  export *" >> "$(PACKAGE_MODMAP)"
+	@echo "}" >> "$(PACKAGE_MODMAP)"
+	@echo "" >> "$(PACKAGE_MODMAP)"
+	@echo "module CAPRUtil [system] {" >> "$(PACKAGE_MODMAP)"
+	@echo "  use CAPR" >> "$(PACKAGE_MODMAP)"
+	@echo "  header \"$(SWIFT_SHIM_INSTALL_DIR)/APRUtilShim.h\"" >> "$(PACKAGE_MODMAP)"
+	@echo "  link \"aprutil-1\"" >> "$(PACKAGE_MODMAP)"
+	@echo "  export *" >> "$(PACKAGE_MODMAP)"
+	@echo "}" >> "$(PACKAGE_MODMAP)"
+	@echo "" >> "$(PACKAGE_MODMAP)"
+	@echo "module CApache [system] {" >> "$(PACKAGE_MODMAP)"
+	@echo "  use CAPR" >> "$(PACKAGE_MODMAP)"
+	@echo "  use CAPRUtil" >> "$(PACKAGE_MODMAP)"
+	@echo "  header \"$(SWIFT_SHIM_INSTALL_DIR)/Apache2Shim.h\"" >> "$(PACKAGE_MODMAP)"
+	@echo "  export *" >> "$(PACKAGE_MODMAP)"
+	@echo "}" >> "$(PACKAGE_MODMAP)"
