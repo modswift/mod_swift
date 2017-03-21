@@ -1,5 +1,9 @@
-#ifndef __APR_SYS_M_SHIM_H__
-#define __APR_SYS_M_SHIM_H__
+#ifndef __APR_SWIFT_SHIM_H__
+#define __APR_SWIFT_SHIM_H__
+
+#ifdef __linux__
+#  include <termios.h>
+#endif
 
 #include "apr.h"
 #include "apr_tables.h"
@@ -15,4 +19,4 @@
 
 #include "apr_thread_proc.h"
 
-#endif /* __APR_SYS_M_SHIM_H__ */
+#endif /* __APR_SWIFT_SHIM_H__ */
