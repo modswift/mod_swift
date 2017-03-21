@@ -100,7 +100,8 @@ testconfig:
 PACKAGE_VERSION_STRING=$(MAJOR).$(MINOR).$(SUBMINOR)
 
 PKGCONFIG_CFLAGS = \
-	"-I\$${includedir}" \
+	"-I\$${includedir}"		\
+	"-I\$${libdir}/swift/shims"	\
 	$(addprefix -I,$(PKGCONFIG_INCLUDE_DIRS))
 
 # Also: libs. Not served by apxs which doesn't need libs, but we might still
