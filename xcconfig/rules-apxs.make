@@ -118,6 +118,16 @@ $(PACKAGE_PKGCONFIG) : $(wildcard config.make)
 
 # xcconfig
 
+# OTHER_LDFLAGS:
+# Note: The Apache API is part of the server itself and only becomes available
+#       when the module is loaded into the server.
+# Absolute pathes to Swift static libs because rpath. No idea :-)
+#
+# SWIFT_INCLUDE_PATHS is a little crazy. When using the Apache2 modmap, the
+# linker can't resolve -lswiftDarwin.a anymore even though it seems to pass in
+# a proper -L
+# Fix: specify absolute path to .a above
+#
 $(PACKAGE_XCCONFIG) : $(wildcard config.make)
 	@echo "// Xcode configuration set for mod_swift" > "$(PACKAGE_XCCONFIG)"
 	@echo "// generated on $(shell date)" >> "$(PACKAGE_XCCONFIG)"
@@ -132,13 +142,11 @@ $(PACKAGE_XCCONFIG) : $(wildcard config.make)
 	@echo "" >> "$(PACKAGE_XCCONFIG)"
 	@echo "OTHER_CFLAGS            = \$$(inherited) $(shell $(APXS) -q EXTRA_CPPFLAGS)" >> "$(PACKAGE_XCCONFIG)"
 	@echo "" >> "$(PACKAGE_XCCONFIG)"
+	@echo "OTHER_LDFLAGS           = \$$(inherited) -rpath \$$(TOOLCHAIN_DIR)/usr/lib/swift/macosx -rpath \$$(BUILT_PRODUCTS_DIR) -undefined dynamic_lookup -lswiftFoundation -lswiftDarwin -lswiftCore" >> "$(PACKAGE_XCCONFIG)"
+	@echo "" >> "$(PACKAGE_XCCONFIG)"
 	@echo "// Note: Apache headers use documentation but using a different style" >> "$(PACKAGE_XCCONFIG)"
 	@echo "CLANG_WARN_DOCUMENTATION_COMMENTS = NO" >> "$(PACKAGE_XCCONFIG)"
 	@echo "" >> "$(PACKAGE_XCCONFIG)"
-	# Ok, this is a little crazy. When using the Apache2 modmap, the linker
-	# can't resolve -lswiftDarwin.a anymore even though it seems to pass in
-	# a proper -L
-	# Fix: specify absolute path to .a above
 	@echo "SWIFT_INCLUDE_PATHS     = \$$(inherited) $(PACKAGE_MODMAP_INSTALL_DIR) \$$(TOOLCHAIN_DIR)/usr/lib/swift" >> "$(PACKAGE_XCCONFIG)"
 	
 # modmap
