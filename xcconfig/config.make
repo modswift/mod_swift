@@ -88,10 +88,36 @@ endif
 # APR and APU configs
 
 ifeq ($(USE_APXS),yes)
+  ifeq ($(APR_CONFIG),)
+    APR_CONFIG = $(shell apxs -q APR_CONFIG)
+  endif
+  ifeq ($(APU_CONFIG),)
+    APU_CONFIG = $(shell apxs -q APU_CONFIG)
+  endif
+  
   PKGCONFIG_INCLUDE_DIRS += \
   	$(shell apxs -q INCLUDEDIR) \
 	$(shell apxs -q APR_INCLUDEDIR) \
 	$(shell apxs -q APU_INCLUDEDIR)
+  
+  
+  # There is no APR/APU_LIBDIR because Apache doesn't assume us to link to it
+  # explicitly. But this is exactly what the module maps do (because clients
+  # can also link that)
+  
+  # We leave out this one, with Brew it doesn't exist and well, it doesn't
+  # make much sense as we are not linking Apache.
+  #   PKGCONFIG_LIB_DIRS += $(shell apxs -q LIBDIR)
+
+  # this is a little fishy, but well
+  ifneq ($(APR_CONFIG),)
+    PKGCONFIG_LDFLAGS += $(shell $(APR_CONFIG) --link-ld)
+  endif
+  ifneq ($(APU_CONFIG),)
+    PKGCONFIG_LDFLAGS += $(shell $(APU_CONFIG) --link-ld)
+  endif
+  PKGCONFIG_LIB_DIRS += \
+  	 $(patsubst -L%,%,$(patsubst -l%,,$(PKGCONFIG_LDFLAGS)))
 endif
 
 

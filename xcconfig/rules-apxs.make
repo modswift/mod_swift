@@ -103,6 +103,10 @@ PKGCONFIG_CFLAGS = \
 	"-I\$${libdir}/swift/shims"	\
 	$(addprefix -I,$(PKGCONFIG_INCLUDE_DIRS))
 
+# tbd
+PKGCONFIG_LDFLAGS_NO_LIBS = \
+	$(addprefix -L,$(PKGCONFIG_LIB_DIRS))
+
 # Also: libs. Not served by apxs which doesn't need libs, but we might still
 #.      want to do those for apr/apu apps?
 $(PACKAGE_PKGCONFIG) : $(wildcard config.make)
@@ -114,6 +118,7 @@ $(PACKAGE_PKGCONFIG) : $(wildcard config.make)
 	@echo "Description: $(PACKAGE_DESCRIPTION)" >> "$(PACKAGE_PKGCONFIG)"
 	@echo "Version: $(PACKAGE_VERSION_STRING)" >> "$(PACKAGE_PKGCONFIG)"
 	@echo "Cflags: $(PKGCONFIG_CFLAGS)" >> "$(PACKAGE_PKGCONFIG)"
+	@echo "Libs: $(PKGCONFIG_LDFLAGS_NO_LIBS)" >> "$(PACKAGE_PKGCONFIG)"
 
 
 # xcconfig
@@ -137,7 +142,7 @@ $(PACKAGE_XCCONFIG) : $(wildcard config.make)
 	@echo "EXECUTABLE_PREFIX       = "   >> "$(PACKAGE_XCCONFIG)"
 	@echo "" >> "$(PACKAGE_XCCONFIG)"
 	@echo "HEADER_SEARCH_PATHS     = \$$(inherited) $(HEADER_FILES_INSTALL_DIR) $(PKGCONFIG_INCLUDE_DIRS)" >> "$(PACKAGE_XCCONFIG)"
-	@echo "LIBRARY_SEARCH_PATHS    = \$$(inherited) \$$(TOOLCHAIN_DIR)/usr/lib/swift/macosx \$$(BUILT_PRODUCTS_DIR)" >> "$(PACKAGE_XCCONFIG)"
+	@echo "LIBRARY_SEARCH_PATHS    = \$$(inherited) $(PKGCONFIG_LIB_DIRS) \$$(TOOLCHAIN_DIR)/usr/lib/swift/macosx \$$(BUILT_PRODUCTS_DIR)" >> "$(PACKAGE_XCCONFIG)"
 	@echo "LD_RUNPATH_SEARCH_PATHS = \$$(inherited) \$$(TOOLCHAIN_DIR)/usr/lib/swift/macosx \$$(BUILT_PRODUCTS_DIR)" >> "$(PACKAGE_XCCONFIG)"
 	@echo "" >> "$(PACKAGE_XCCONFIG)"
 	@echo "OTHER_CFLAGS            = \$$(inherited) $(shell $(APXS) -q EXTRA_CPPFLAGS)" >> "$(PACKAGE_XCCONFIG)"
