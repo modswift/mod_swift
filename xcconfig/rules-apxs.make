@@ -109,9 +109,14 @@ PKGCONFIG_CFLAGS = \
 	"-I\$${libdir}/swift/shims"	\
 	$(addprefix -I,$(PKGCONFIG_INCLUDE_DIRS))
 
-# tbd
-PKGCONFIG_LDFLAGS_NO_LIBS = \
+# pickup the right APR
+ifeq ($(UNAME_S),Darwin)
+  PKGCONFIG_LDFLAGS_NO_LIBS = \
 	$(addprefix -L,$(PKGCONFIG_LIB_DIRS))
+else
+  # on Linux we want the system to handle this
+  PKGCONFIG_LDFLAGS_NO_LIBS =
+endif
 
 # Also: libs. Not served by apxs which doesn't need libs, but we might still
 #.      want to do those for apr/apu apps?
