@@ -60,7 +60,7 @@ ifeq ($(UNAME_S),Darwin)
       endif
     endif
   endif
-  
+
   ifeq ($(prefix),)
     prefix = /usr/libexec/apache2
   endif
@@ -94,17 +94,17 @@ ifeq ($(USE_APXS),yes)
   ifeq ($(APU_CONFIG),)
     APU_CONFIG = $(shell apxs -q APU_CONFIG)
   endif
-  
+
   PKGCONFIG_INCLUDE_DIRS += \
-  	$(shell apxs -q INCLUDEDIR) \
+	$(shell apxs -q INCLUDEDIR) \
 	$(shell apxs -q APR_INCLUDEDIR) \
 	$(shell apxs -q APU_INCLUDEDIR)
-  
-  
+
+
   # There is no APR/APU_LIBDIR because Apache doesn't assume us to link to it
   # explicitly. But this is exactly what the module maps do (because clients
   # can also link that)
-  
+
   # We leave out this one, with Brew it doesn't exist and well, it doesn't
   # make much sense as we are not linking Apache.
   #   PKGCONFIG_LIB_DIRS += $(shell apxs -q LIBDIR)
@@ -117,7 +117,7 @@ ifeq ($(USE_APXS),yes)
     PKGCONFIG_LDFLAGS += $(shell $(APU_CONFIG) --link-ld)
   endif
   PKGCONFIG_LIB_DIRS += \
-  	 $(patsubst -L%,%,$(patsubst -l%,,$(PKGCONFIG_LDFLAGS)))
+	 $(patsubst -L%,%,$(patsubst -l%,,$(PKGCONFIG_LDFLAGS)))
 endif
 
 
@@ -161,4 +161,8 @@ endif
 
 ifeq ($(SWIFT_SHIM_INSTALL_DIR),)
   SWIFT_SHIM_INSTALL_DIR=$(prefix)/lib/swift/shims
+endif
+
+ifeq ($(MODULE_LOAD_INSTALL_DIR),)
+  MODULE_LOAD_INSTALL_DIR=/etc/apache2/mods-available
 endif
