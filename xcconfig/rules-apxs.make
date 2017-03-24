@@ -44,7 +44,7 @@ clean :
 	rm -f $(APXS_BUILD_FILES) $(PACKAGE_HELPERS)
 
 distclean : clean
-	rm -rf .libs
+	rm -rf $(APXS_OUTDIR)
 	rm -f config.make
 
 install : all
@@ -79,7 +79,7 @@ LIBTOOL_CPREFIX=-Wc,
 LIBTOOL_LDPREFIX=-Wl,
 APXS_EXTRA_CFLAGS_LIBTOOL  = $(addprefix $(LIBTOOL_CPREFIX),$(APXS_EXTRA_CFLAGS))
 APXS_EXTRA_LDFLAGS_LIBTOOL = $(addprefix $(LIBTOOL_LDPREFIX),$(APXS_EXTRA_LDFLAGS))
-APXS_LIBTOOL_BUILD_RESULT  = .libs/$(PACKAGE).so
+APXS_LIBTOOL_BUILD_RESULT  = $(APXS_OUTDIR)/$(PACKAGE).so
 
 $(APACHE_C_MODULE_BUILD_RESULT) : $(CFILES)
 	@mkdir -p $(@D)
