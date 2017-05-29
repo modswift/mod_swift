@@ -9,7 +9,7 @@
 ![tuxOS](https://img.shields.io/badge/os-tuxOS-green.svg?style=flat)
 ![Travis](https://travis-ci.org/AlwaysRightInstitute/mod_swift.svg?branch=develop)
 
-**mod_swift** is a technology demo which shows how to write native modules
+**mod_swift** allows you to write native modules
 for the
 [Apache Web Server](https://httpd.apache.org)
 in the 
@@ -24,6 +24,13 @@ modules (mods_xyz).
 Also included are Xcode base configurations, module maps for Apache and APR
 as well as a few API wrappers that are used to workaround `swiftc` crashers
 and Swift-C binding limitations.
+
+**Note**: mod_swift is very low level, we currently provide two efforts to
+          make Apache module development more pleasant:
+          the Swift [Apache API](https://github.com/modswift/Apache),
+          and [ApacheExpress](https://apacheexpress.io/).
+          The latter provides a very convenient Node.js/ExpressJS like API
+          which makes it very easy to write modules.
 
 ### How to use the module in Apache
 
@@ -81,9 +88,6 @@ regular C modules.
 - The code is 
   [properly formatted](http://www.alwaysrightinstitute.com/swifter-space/),
   max width 80 chars, 2-space indent.
-- This doesn't use `apxs` because that is badly b0rked on both 10.11 and 10.12.
-- It uses a lot of hardcoded load and lookup pathes, remember, it is a demo!
-- It has some leaks and issues, e.g. modules are not properly unloaded.
 - Sure, you can link against arbitrary Swift dylibs, 
   [mustache](Sources/mustache/) is an example for exactly that.
 - However, you currently cannot use the Swift Package Manager to create
@@ -92,19 +96,10 @@ regular C modules.
 - Yes `mod_swift` itself could be avoided by including the .c in the Swift
   module. Yes, you can even statically link Swift including its runtime. Let
   me know if this is interesting, I have a branch which does exactly that.
-- There is one big bet in the code: Officially there is no way to invoke a
-  Swift function from C, only the other way around!
-  In other words: it is pure luck that 
-  [this works](Sources/mod_swift/mod_swift.c#L47) and is ABI compatible with C.
 - If you would want to debug the stuff in Xcode - `/usr/sbin/httpd` is under
   [macOS SIP](https://support.apple.com/en-us/HT204899).
 - On macOS 10.11 starting Apache with -X crashes a few seconds after the last
   request was received. Maybe just SIGPIPE or sth. 10.12 looks fine.
-- Unloading is an issue. I think the Apple and GNUstep Objective-C
-  runtimes cannot be properly unloaded (I've heard there is a great runtime
-  that can).
-  No idea what the situation with 'pure Swift' is.
-- Would be cool if Swift 4 would get a proper `extern C {}`.
 - Yes, Apache content handlers are not [Noze.io](http://noze.io/) like 
   asynchronous but run in a traditional, synchronous thread-setup.
 - Apache varargs funcs are not available since Swift doesn't support such. We
@@ -130,7 +125,7 @@ for Apache 1.3.
 
 ### Status
 
-This is a demo. Do not use it for realz. At least not w/o our help ;->
+This is not a demo anymore, it actually seems to work quite well.
 
 ### Who
 
