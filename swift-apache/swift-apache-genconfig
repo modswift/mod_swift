@@ -1,0 +1,181 @@
+#!/bin/bash
+#
+# swift-apache -- A collection of SwiftPM extension to deal with building
+# Apache modules.
+#
+# Check out the website:
+#     http://mod-swift.org/
+#
+# Copyright 2017 ZeeZide GmbH. All rights reserved.
+#
+
+# swift apache genconfig
+#
+# Supported template parameters:
+#   %SRCROOT%
+#   %APACHE_PREFIX%
+#   %APACHE_PORT%
+#   %APACHE_SSL_PORT%
+#   %APACHE_PIDFILE%
+#   %APACHE_DOCROOT%
+#   %APACHE_MODULE_RELDIR%
+#   %APACHE_MODULE_DIR%
+#   %APACHE_SERVER_CERT_DIR%
+#   %APACHE_SERVER_CERT%
+#   %APACHE_SERVER_KEY%
+#   %APACHE_HTTP2_LOAD_COMMAND%
+#   %CONFIGURATION_BUILD_DIR%
+#
+# If the project itself contains an `apache.conf`, that will be used.
+# If it provides a `apache-template.conf`, an apache.conf will be created from
+# that.
+# If it provides neither (recommended), the main templates stored in
+#   ${prefix}/lib/apache-config-template
+# will be used. There is one for each platform, and one for debug & release
+# mode.
+# 
+# FURTHER: The module can provide a MODULENAME-template.conf or a 
+#          MODULENAME.conf. An include for such will be appended to the
+#          generated apache.conf (NOT if there is just a top-level apache.conf)
+
+ARGS="$@"
+
+# check whether environment is sound
+
+EMBEDDED_VALIDATE=yes . swift-apache-validate
+rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+
+# generate apache config, unless there is one provided
+
+APACHE_PREFIX="`apxs -q prefix`"
+if [[ "x${APACHE_PREFIX}" = "x" ]]; then
+  APACHE_PREFIX="`apxs -q exp_sysconfdir`"
+fi
+if [[ "x${APACHE_PREFIX}" = "x" ]]; then
+  echo 1>&2 "ERROR: Could not determine ServerRoot"
+  exit 12
+fi
+
+APACHE_PORT=8042
+APACHE_SSL_PORT=8442
+APACHE_PIDFILE="${PWD}/.httpd.pid"
+
+DOCROOT_BASEDIR=${DOCROOT_BASEDIR:-${SRCROOT}}
+
+APACHE_CONFIG_TEMPLATES_INSTALL_DIR=${APACHE_CONFIG_TEMPLATES_INSTALL_DIR:-${MOD_SWIFT_PREFIX}/lib/mod_swift/apache-config-templates}
+
+
+# Check whether the Swift package has a 'public' dir for static files
+
+if [[ -d "${DOCROOT_BASEDIR}/htdocs" ]]; then
+  APACHE_DOCROOT="${DOCROOT_BASEDIR}/htdocs"
+elif [[ -d "${DOCROOT_BASEDIR}/www" ]]; then
+  APACHE_DOCROOT="${DOCROOT_BASEDIR}/www"
+elif [[ -d "${DOCROOT_BASEDIR}/public" ]]; then
+  APACHE_DOCROOT="${DOCROOT_BASEDIR}/public"
+else
+  DOCROOT_BASEDIR=
+  APACHE_DOCROOT="`apxs -q htdocsdir`"
+  echo "Note: DocRoot ${APACHE_DOCROOT}"
+fi  
+
+
+# Note: can also be provided as apache-template.conf file by module!
+
+# TODO: we need shell unit tests for all those variants
+if [[ ! -f apache.conf ]]; then
+  APACHE_CONFIG_TARGET_DIR="${CONFIGURATION_BUILD_DIR}"
+  mkdir -p "${APACHE_CONFIG_TARGET_DIR}"
+  
+  APACHE_CONFIG="${APACHE_CONFIG:-${APACHE_CONFIG_TARGET_DIR}/apache.conf}"
+  
+  if [[ -f "${PWD}/apache-template.conf" ]]; then
+    APACHE_CONFIG_TEMPLATE_FILE="${PWD}/apache-template.conf"
+  else
+    if [[ "${UNAME_S}" = "Darwin" ]]; then
+      APACHE_CONFIG_TEMPLATE_FILE="${APACHE_CONFIG_TEMPLATES_INSTALL_DIR}/mod_swift-macosx-${SPM_BUILD_CONFIG}.conf.template"
+    else
+      APACHE_CONFIG_TEMPLATE_FILE="${APACHE_CONFIG_TEMPLATES_INSTALL_DIR}/mod_swift-linux-${SPM_BUILD_CONFIG}.conf.template"
+    fi
+    if [[ ! -f "${APACHE_CONFIG_TEMPLATE_FILE}" ]]; then
+      echo "Could not find Apache config template: ${APACHE_CONFIG_TEMPLATE_FILE}"
+      exit 42
+    fi
+  fi
+  
+  cat "${APACHE_CONFIG_TEMPLATE_FILE}" \
+    | sed "s#%SRCROOT%#${SRCROOT}#g"               \
+    | sed "s#%APACHE_PREFIX%#${APACHE_PREFIX}#g"   \
+    | sed "s#%APACHE_PORT%#${APACHE_PORT}#g"       \
+    | sed "s#%APACHE_SSL_PORT%#${APACHE_SSL_PORT}#g"       \
+    | sed "s#%APACHE_PIDFILE%#${APACHE_PIDFILE}#g" \
+    | sed "s#%APACHE_DOCROOT%#${APACHE_DOCROOT}#g" \
+    | sed "s#%APACHE_MODULE_RELDIR%#${APACHE_MODULE_RELDIR}#g" \
+    | sed "s#%APACHE_MODULE_DIR%#${APACHE_MODULE_DIR}#g" \
+    | sed "s#%APACHE_SERVER_CERT_DIR%#${APACHE_SERVER_CERT_DIR}#g" \
+    | sed "s#%APACHE_SERVER_CERT%#${APACHE_SERVER_CERT}#g" \
+    | sed "s#%APACHE_SERVER_KEY%#${APACHE_SERVER_KEY}#g" \
+    | sed "s#%APACHE_HTTP2_LOAD_COMMAND%#${APACHE_HTTP2_LOAD_COMMAND}#g" \
+    | sed "s#%CONFIGURATION_BUILD_DIR%#${CONFIGURATION_BUILD_DIR}#g" \
+    > "${APACHE_CONFIG}"
+  
+  if [[ ${MODULE_NAME} != "mod_"* ]]; then
+    echo >> "${APACHE_CONFIG}"
+    echo >> "${APACHE_CONFIG}" "LoadModule swift_module ${MOD_SWIFT_PREFIX}/${APACHE_MODULE_RELDIR}/mod_swift.so"
+  fi
+  
+  MODULE_CONFIG_TEMPLATE_FILE="${MODULE_NAME}-template.conf"
+  MODULE_CONFIG="${DOCROOT_BASEDIR}/${MODULE_NAME}.conf"
+  
+  if [[ ! -f "${MODULE_CONFIG}" ]]; then
+    if [[ -f "${MODULE_CONFIG_TEMPLATE_FILE}" ]]; then
+      MODULE_CONFIG_TEMPLATE="`cat ${MODULE_CONFIG_TEMPLATE_FILE}`"
+      if [[ "$APACHE_CONFIG_TARGET_DIR" = /* ]]; then
+        MODULE_CONFIG="${APACHE_CONFIG_TARGET_DIR}/module.conf"
+      else
+        MODULE_CONFIG="${PWD}/${APACHE_CONFIG_TARGET_DIR}/module.conf"
+      fi
+      
+      echo "${MODULE_CONFIG_TEMPLATE}" \
+        | sed "s#%SRCROOT%#${SRCROOT}#g"               \
+        | sed "s#%APACHE_PREFIX%#${APACHE_PREFIX}#g"   \
+        | sed "s#%APACHE_PORT%#${APACHE_PORT}#g"       \
+        | sed "s#%APACHE_SSL_PORT%#${APACHE_SSL_PORT}#g" \
+        | sed "s#%APACHE_PIDFILE%#${APACHE_PIDFILE}#g" \
+        | sed "s#%APACHE_DOCROOT%#${APACHE_DOCROOT}#g" \
+        | sed "s#%APACHE_MODULE_RELDIR%#${APACHE_MODULE_RELDIR}#g" \
+        | sed "s#%APACHE_MODULE_DIR%#${APACHE_MODULE_DIR}#g" \
+        | sed "s#%APACHE_SERVER_CERT_DIR%#${APACHE_SERVER_CERT_DIR}#g" \
+        | sed "s#%APACHE_SERVER_CERT%#${APACHE_SERVER_CERT}#g" \
+        | sed "s#%APACHE_SERVER_KEY%#${APACHE_SERVER_KEY}#g" \
+        | sed "s#%APACHE_HTTP2_LOAD_COMMAND%#${APACHE_HTTP2_LOAD_COMMAND}#g" \
+        | sed "s#%CONFIGURATION_BUILD_DIR%#${CONFIGURATION_BUILD_DIR}#g" \
+        > "${MODULE_CONFIG}"
+    fi
+  fi
+  
+  if [[ "$BUILD_PRODUCT" = /* ]]; then
+    ABS_BUILD_PRODUCT="${BUILD_PRODUCT}"
+  else
+    ABS_BUILD_PRODUCT="${PWD}/${BUILD_PRODUCT}"
+  fi
+  
+  if [[ -f "${MODULE_CONFIG}" ]]; then
+    echo >> "${APACHE_CONFIG}"
+    if ! grep -q LoadSwiftModule "${MODULE_CONFIG}"; then
+      echo >> "${APACHE_CONFIG}" "LoadSwiftModule ApacheMain ${ABS_BUILD_PRODUCT}"
+    fi
+    echo >> "${APACHE_CONFIG}" "Include ${MODULE_CONFIG}"
+  else
+    echo >> "${APACHE_CONFIG}"
+    echo >> "${APACHE_CONFIG}" "LoadSwiftModule ApacheMain ${ABS_BUILD_PRODUCT}"
+  fi
+else
+  APACHE_CONFIG=apache.conf
+fi
+
+APACHE_PORT="`grep -Eo \"Listen.*[0-9]{1,5}\" ${APACHE_CONFIG} | sed s#Listen[[:space:]]##g | tr -d \"[:space:]\"`"
+
+export APACHE_CONFIG
+export APACHE_PORT
+export APACHE_SSL_PORT

@@ -8,7 +8,8 @@ endif
 
 SHARED_LIBRARY_PREFIX=lib
 
-MKDIR_P = mkdir -p
+MKDIR_P      = mkdir -p
+INSTALL_FILE = cp
 
 UNAME_S := $(shell uname -s)
 
@@ -47,7 +48,8 @@ USE_BREW=no
 ifeq ($(UNAME_S),Darwin)
   SHARED_LIBRARY_SUFFIX=.dylib
   APACHE_MODULE_SUFFIX:=.so # yes
-
+  INSTALL_FILE = cp -X
+  
   ifeq ($(USE_APXS),yes)
     APXS_EXTRA_CFLAGS += -Wno-nullability-completeness
 
@@ -123,12 +125,21 @@ endif
 
 # We have set prefix above, or we got it via ./config.make
 # Now we need to derive:
+# - BINARY_INSTALL_DIR            e.g. /usr/local/bin
 # - APACHE_MODULE_INSTALL_DIR
-# - HEADER_FILES_INSTALL_DIR
-# - PKGCONFIG_INSTALL_DIR
-# - XCCONFIG_INSTALL_DIR
-# - MODMAP_INSTALL_DIR
-# - SWIFT_SHIM_INSTALL_DIR
+# - HEADER_FILES_INSTALL_DIR      e.g. /usr/local/include
+# - PKGCONFIG_INSTALL_DIR         e.g. /usr/local/lib/pkgconfig
+# - XCCONFIG_INSTALL_DIR          e.g. /usr/local/lib/xcconfig
+# - MODMAP_INSTALL_DIR            e.g. /usr/local/lib/modmap
+# - SWIFT_SHIM_INSTALL_DIR        e.g. /usr/local/lib/swift/shims
+# - APACHE_CONFIG_TEMPLATES_INSTALL_DIR
+#                        e.g. /usr/local/lib/mod_swift/apache-config-templates
+# - MODULE_LOAD_INSTALL_DIR       e.g. /etc/apache2/mods-available
+# - APACHE_CERT_INSTALL_DIR       e.g. /usr/local/lib/mod_swift/certificates
+
+ifeq ($(BINARY_INSTALL_DIR),)
+  BINARY_INSTALL_DIR=$(prefix)/bin
+endif
 
 ifeq ($(APACHE_MODULE_INSTALL_DIR),)
   ifeq ($(USE_APXS),yes)
@@ -144,6 +155,7 @@ ifeq ($(APACHE_MODULE_INSTALL_DIR),)
   endif
   APACHE_MODULE_INSTALL_DIR=$(prefix)$(APACHE_MODULE_RELDIR)
 endif
+
 ifeq ($(HEADER_FILES_INSTALL_DIR),)
   HEADER_FILES_INSTALL_DIR=$(prefix)/include
 endif
@@ -163,6 +175,15 @@ ifeq ($(SWIFT_SHIM_INSTALL_DIR),)
   SWIFT_SHIM_INSTALL_DIR=$(prefix)/lib/swift/shims
 endif
 
+ifeq ($(APACHE_CONFIG_TEMPLATES_INSTALL_DIR),)
+  APACHE_CONFIG_TEMPLATES_INSTALL_DIR=$(prefix)/lib/mod_swift/apache-config-templates
+endif
+
 ifeq ($(MODULE_LOAD_INSTALL_DIR),)
+  # Ubuntu
   MODULE_LOAD_INSTALL_DIR=/etc/apache2/mods-available
+endif
+
+ifeq ($(APACHE_CERT_INSTALL_DIR),)
+  APACHE_CERT_INSTALL_DIR=$(prefix)/lib/mod_swift/certificates
 endif

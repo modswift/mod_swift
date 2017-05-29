@@ -1,0 +1,65 @@
+ServerRoot  "%APACHE_PREFIX%"
+PidFile     "%APACHE_PIDFILE%"
+ServerAdmin wrong@alwaysrightinstitute.com
+ServerName  localhost
+Listen      %APACHE_PORT%
+
+IncludeOptional mods-enabled/*.load
+IncludeOptional mods-enabled/*.conf
+
+%APACHE_HTTP2_LOAD_COMMAND%
+
+<Directory />
+  AllowOverride none
+  Require all granted
+</Directory>
+
+DocumentRoot "%APACHE_DOCROOT%"
+<Directory "%APACHE_DOCROOT%">
+  Options FollowSymLinks Multiviews
+  MultiviewsMatch Any
+  AllowOverride All
+  Require all granted
+</Directory>
+
+<FilesMatch "^\.([Hh][Tt]|[Dd][Ss]_[Ss])">
+  Require all denied
+</FilesMatch>
+
+ErrorLog    /dev/stderr
+TransferLog /dev/stdout
+
+LogLevel warn
+
+<IfModule log_config_module>
+  LogFormat "%m %U %>s %b - %{ms}Tms"
+</IfModule>
+
+<IfModule mime_module>
+  TypesConfig /etc/mime.types
+  AddType application/x-compress .Z
+  AddType application/x-gzip .gz .tgz
+</IfModule>
+
+<IfModule mod_ssl.c>
+  Listen %APACHE_SSL_PORT%
+  <IfModule mod_socache_shmcb.c>
+    SSLSessionCache shmcb:%CONFIGURATION_BUILD_DIR%/ssl_scache(512000)
+  </IfModule>
+  
+  <VirtualHost *:%APACHE_SSL_PORT%>
+    SSLEngine             on
+    SSLCertificateFile    %APACHE_SERVER_CERT_DIR%/%APACHE_SERVER_CERT%
+    SSLCertificateKeyFile %APACHE_SERVER_CERT_DIR%/%APACHE_SERVER_KEY%
+
+    ServerAdmin root@localhost
+    ServerName localhost
+
+    DocumentRoot "%APACHE_DOCROOT%"
+  
+    <IfModule http2_module>
+      Protocols h2 http/1.1
+    </IfModule>
+    
+  </VirtualHost>
+</IfModule>

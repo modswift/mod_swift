@@ -1,0 +1,95 @@
+#!/bin/bash
+#
+# swift-apache -- A collection of SwiftPM extension to deal with building
+# Apache modules.
+#
+# Check out the website:
+#     http://mod-swift.org/
+#
+# Copyright 2017 ZeeZide GmbH. All rights reserved.
+#
+
+# apache-serve runs Apache with either a provided or a minimal configuration
+# for the module being build
+
+ARGS="$@"
+
+# generate Apache config
+
+EMBEDDED_VALIDATE=yes . swift-apache-genconfig
+rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+
+
+# check whether the module has been built, otherwise call build
+# TBD: Always rebuild?
+
+if ! test -x "${BUILD_PRODUCT}"; then
+  # FIXME: only pass over build flags (just -c/--configuration?)
+  if [[ "x$CONFIGURATION" = "xrelease" ]]; then
+    swift apache build -c release
+  else
+    swift apache build -c debug
+  fi
+  rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+fi
+
+if ! test -x "${BUILD_PRODUCT}"; then
+  echo 1>&2 "ERROR: can't find built product: ${BUILD_PRODUCT}"
+  exit 10
+fi
+
+
+# locate Apache daemon (httpd usually)
+
+HTTPD_NAME="`apxs -q progname`"
+BIN_DIR="`apxs -q exp_bindir`"
+HTTPD_PATH="${BIN_DIR}/${HTTPD_NAME}"
+
+if ! test -x "${HTTPD_PATH}"; then
+  SBIN_DIR="`apxs -q exp_sbindir`"
+  HTTPD_PATH="${SBIN_DIR}/${HTTPD_NAME}"
+fi
+
+if ! test -x "${HTTPD_PATH}"; then
+  echo 1>&2 "ERROR: Missing ${HTTPD_NAME}, did you?:"
+  if ! test "${UNAME_S}" = "Darwin"; then
+    echo 1>&2
+    echo 1>&2 "    sudo apt-get install apache2"
+    echo 1>&2
+  fi
+  exit 11
+fi
+
+
+# start Apache
+
+# TODO: apache.conf is env specific. Well, or the module.conf
+# - generate an apache conf?
+#   - push config into mod_swift?
+# - keep server-root as-is and make the module.conf absolute?
+
+# - we can point the server to the current directory via
+#     -d "$(PWD)"
+#   but then all the standard modules need to have absolute
+#   document names
+
+# This starts Apache in debug mode, i.e. it doesn't work and
+# only runs a single child.
+# There is also: -DFOREGROUND
+if [[ "x${APACHE_DEBUG_MODE}" = "x" ]]; then
+  APACHE_DEBUG_MODE=-X
+fi
+
+if [[ -f "${APACHE_PIDFILE}" ]]; then
+  OLDPID="`cat ${APACHE_PIDFILE}`"
+  PROCESS="`ps -p $OLDPID | grep $OLDPID`"
+  if [[ "x$PROCESS" = "x" ]]; then
+    rm "${APACHE_PIDFILE}"
+  else
+    echo "Apache still running as per pidfile?:"
+    echo $PROCESS
+  fi
+fi
+
+echo "Starting Apache on port ${APACHE_PORT}:"
+EXPRESS_VIEWS=views "${HTTPD_PATH}" ${APACHE_DEBUG_MODE} -f "${APACHE_CONFIG}"

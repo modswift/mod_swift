@@ -3,7 +3,7 @@
 
 ifeq ($(USE_APXS),no)
   ifeq ($(UNAME_S),Darwin)
-    $(error missing Apache apxs, did you brew install homebrew/apache/httpd24?)
+    $(error missing Apache apxs, did you brew install homebrew/apache/httpd24 --with-mpm-event --with-http2?)
   else
     $(error missing Apache apxs, did you install apache2-dev?)
   endif
@@ -51,29 +51,38 @@ install : all
 	$(MKDIR_P) $(APACHE_MODULE_INSTALL_DIR) \
 		   $(HEADER_FILES_INSTALL_DIR)  \
 		   $(PKGCONFIG_INSTALL_DIR)	\
-		   $(SWIFT_SHIM_INSTALL_DIR)
-	cp $(APACHE_C_MODULE_BUILD_RESULT) \
-	   $(APACHE_MODULE_INSTALL_DIR)/$(APACHE_C_MODULE_INSTALL_NAME)
-	cp $(HFILES) $(HEADER_FILES_INSTALL_DIR)/
-	cp $(SWIFT_SHIM_FILES) $(SWIFT_SHIM_INSTALL_DIR)/
-	cp $(PACKAGE_PKGCONFIG) $(PKGCONFIG_INSTALL_DIR)/
+		   $(SWIFT_SHIM_INSTALL_DIR)	\
+		   $(APACHE_CONFIG_TEMPLATES_INSTALL_DIR) \
+		   $(APACHE_CERT_INSTALL_DIR)   \
+		   $(BINARY_INSTALL_DIR)
+	$(INSTALL_FILE) $(APACHE_C_MODULE_BUILD_RESULT) \
+			$(APACHE_MODULE_INSTALL_DIR)/$(APACHE_C_MODULE_INSTALL_NAME)
+	$(INSTALL_FILE) $(HFILES) $(HEADER_FILES_INSTALL_DIR)/
+	$(INSTALL_FILE) $(SWIFT_SHIM_FILES) $(SWIFT_SHIM_INSTALL_DIR)/
+	$(INSTALL_FILE) $(PACKAGE_PKGCONFIG) $(PKGCONFIG_INSTALL_DIR)/
 	if test "$(UNAME_S)" = "Darwin"; then \
-	  $(MKDIR_P) $(XCCONFIG_INSTALL_DIR) $(PACKAGE_MODMAP_INSTALL_DIR); \
-	  cp $(PACKAGE_XCCONFIG)  $(XCCONFIG_INSTALL_DIR)/; \
-	  cp $(PACKAGE_MODMAP)    $(PACKAGE_MODMAP_INSTALL_DIR)/; \
+	  $(MKDIR_P) $(XCCONFIG_INSTALL_DIR)  $(PACKAGE_MODMAP_INSTALL_DIR); \
+	  $(INSTALL_FILE) $(PACKAGE_XCCONFIG) $(XCCONFIG_INSTALL_DIR)/;	\
+	  $(INSTALL_FILE) $(PACKAGE_MODMAP)   $(PACKAGE_MODMAP_INSTALL_DIR)/; \
 	else \
 	  $(MKDIR_P) $(MODULE_LOAD_INSTALL_DIR); \
-	  cp $(PACKAGE_MODULE_LOAD_FILE) $(MODULE_LOAD_INSTALL_DIR)/; \
-	fi
+	  $(INSTALL_FILE) $(PACKAGE_MODULE_LOAD_FILE) $(MODULE_LOAD_INSTALL_DIR)/; \
+	fi;
+	$(INSTALL_FILE) $(SCRIPTS)                 $(BINARY_INSTALL_DIR)/
+	$(INSTALL_FILE) $(APACHE_CONFIG_TEMPLATES) $(APACHE_CONFIG_TEMPLATES_INSTALL_DIR)/
+	$(INSTALL_FILE) $(APACHE_CERTIFICATES)     $(APACHE_CERT_INSTALL_DIR)/
 
 uninstall :
 	rm -f $(APACHE_MODULE_INSTALL_DIR)/$(APACHE_C_MODULE_INSTALL_NAME) \
-	      $(HEADER_FILES_INSTALL_PATHES) \
-	      $(SHIM_FILES_INSTALL_PATHES)   \
-	      $(PKGCONFIG_INSTALL_DIR)/$(PACKAGE).pc \
-	      $(XCCONFIG_INSTALL_DIR)/$(PACKAGE).xcconfig \
-	      $(PACKAGE_MODMAP_INSTALL_DIR)/module.map \
-	      $(MODULE_LOAD_INSTALL_DIR)/$(PACKAGE_MODULE_LOAD_FILE)
+	      $(HEADER_FILES_INSTALL_PATHES) 				\
+	      $(SHIM_FILES_INSTALL_PATHES)   				\
+	      $(PKGCONFIG_INSTALL_DIR)/$(PACKAGE).pc 			\
+	      $(XCCONFIG_INSTALL_DIR)/$(PACKAGE).xcconfig 		\
+	      $(PACKAGE_MODMAP_INSTALL_DIR)/module.map 			\
+	      $(MODULE_LOAD_INSTALL_DIR)/$(PACKAGE_MODULE_LOAD_FILE) 	\
+	      $(addprefix $(BINARY_INSTALL_DIR)/,$(notdir $(SCRIPTS)))	\
+	      $(addprefix $(APACHE_CONFIG_TEMPLATES_INSTALL_DIR)/,$(notdir $(APACHE_CONFIG_TEMPLATES))) \
+	      $(addprefix $(APACHE_CERT_INSTALL_DIR)/,$(notdir $(APACHE_CERTIFICATES)))
 
 LIBTOOL_CPREFIX=-Wc,
 LIBTOOL_LDPREFIX=-Wl,
@@ -92,12 +101,17 @@ $(APACHE_C_MODULE_BUILD_RESULT) : $(CFILES)
 # config test
 
 testconfig:
-	@echo "Brew:               $(BREW)"
-	@echo "Use brew:           $(USE_BREW)"
-	@echo "Prefix:             $(prefix)"
-	@echo "Install module in:  $(APACHE_MODULE_INSTALL_DIR)"
-	@echo "Install headers in: $(HEADER_FILES_INSTALL_DIR)"
-	@echo "Install pc in:      $(PKGCONFIG_INSTALL_DIR)"
+	@echo "Brew:                $(BREW)"
+	@echo "Use brew:            $(USE_BREW)"
+	@echo "APXS:                $(APXS)"
+	@echo "Prefix:              $(prefix)"
+	@echo "Install module in:   $(APACHE_MODULE_INSTALL_DIR)"
+	@echo "Install headers in:  $(HEADER_FILES_INSTALL_DIR)"
+	@echo "Install pc in:       $(PKGCONFIG_INSTALL_DIR)"
+	@echo "Install cfgtmpls in: $(APACHE_CONFIG_TEMPLATES_INSTALL_DIR)"
+
+testconfig-swift-docker:
+	docker run --rm -v $(PWD):/src helje5/swift-apache-dev bash -c "cd /src; make testconfig"
 
 
 # pkg config

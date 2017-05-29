@@ -10,6 +10,7 @@
 #include "http_config.h"
 #include "http_core.h"
 #include "http_log.h"
+#include "http_request.h"
 
 #include "apr_dbd.h" // mod_dbd requires this
 #include "mod_dbd.h"

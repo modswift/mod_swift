@@ -42,7 +42,7 @@ function cfgwrite() {
 }
 
 function genConfigMake() {
-  if test $ARG_BEQUIET != 1; then
+  if [[ $ARG_BEQUIET != 1 ]]; then
     echo "creating: $ARG_CFGMAKE"
   fi
   
@@ -53,7 +53,7 @@ function genConfigMake() {
   cfgwrite "#         make debug=yes"
   cfgwrite ""
 
-  if test $ARG_WITH_DEBUG = 1; then
+  if [[ $ARG_WITH_DEBUG = 1 ]]; then
     cfgwrite "# configured to produce debugging code";
     cfgwrite "debug:=yes"
   else
@@ -62,7 +62,7 @@ function genConfigMake() {
   fi
   cfgwrite ""
   
-  if test $ARG_WITH_STRIP = 1; then
+  if [[ $ARG_WITH_STRIP = 1 ]]; then
     cfgwrite "# configured to produce stripped code";
     cfgwrite "strip:=yes"
   else
@@ -87,7 +87,7 @@ function genConfigMake() {
 }
 
 function runIt() {
-  if test "$ARG_APXS" = "NOTSET"; then
+  if [[ "$ARG_APXS" = "NOTSET" ]]; then
     ARG_APXS="`which apxs`";
   fi
   if [ -z "$ARG_PREFIX" ]; then

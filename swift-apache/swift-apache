@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# swift-apache -- A collection of SwiftPM extension to deal with building
+# Apache modules.
+#
+# Check out the website:
+#     http://mod-swift.org/
+#
+# Copyright 2017 ZeeZide GmbH. All rights reserved.
+#
+
+if [ "$DEBUG" = "yes" ]; then
+  set -x
+fi
+
+export SWIFT_APACHE_DIR=$(dirname "$0")
+
+usage() {
+  echo "usage: swift apache <subcommand>"
+  echo
+  echo "Available subcommands are:"
+  echo "   init      Setup directory as a Swift Apache module Package."
+  echo "   build     Build Swift Package as a Swift module."
+  echo "   serve     Start Apache and load Swift Apache module."
+  echo "   validate  Check Apache build environment."
+  echo
+  echo "Try 'swift apache <subcommand> help' for details."
+}
+
+main() {
+  if [ $# -lt 1 ]; then
+    usage
+    exit 1
+  fi
+
+  # sanity checks
+  SUBCOMMAND="$1"; shift
+  
+  if [[ -x "${SWIFT_APACHE_DIR}/swift-apache-$SUBCOMMAND" ]]; then
+    RUNCMD="${SWIFT_APACHE_DIR}/swift-apache-$SUBCOMMAND"
+  else
+    THECMD="`ls ${SWIFT_APACHE_DIR}/swift-apache-${SUBCOMMAND}* | head -n 1`"
+    if [[ -x "${THECMD}" ]]; then
+      RUNCMD="${THECMD}"
+    else
+      echo "Unknown subcommand: '$SUBCOMMAND'"
+      echo
+      usage
+      exit 1
+    fi
+  fi
+
+  # run command
+  . "${RUNCMD}"
+}
+
+main "$@"

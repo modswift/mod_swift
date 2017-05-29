@@ -1,0 +1,269 @@
+#!/bin/bash
+#
+# swift-apache -- A collection of SwiftPM extension to deal with building
+# Apache modules.
+#
+# Check out the website:
+#     http://mod-swift.org/
+#
+# Copyright 2017 ZeeZide GmbH. All rights reserved.
+#
+
+if [[ "x${SWIFT_APACHE_VALIDATED}" = "x" ]]; then
+SWIFT_APACHE_VALIDATED=yes
+
+# Check whether environment is sound. Also: setup common variables.
+#
+# Variables set:
+#   UNAME_S
+#   SRCROOT                  - if not set, $PWD
+#   APACHE_MODULE_RELDIR     - e.g. libexec/
+#   APACHE_MODULE_DIR        - full path or reldir, depends
+#   MOD_SWIFT_PREFIX         - e.g. /usr/local on Linux, Cellar on Brew
+#   MODULE_NAME              - e.g. mods_expressdemo
+#   BUILD_MAIN               - e.g. ".build"
+#   BUILD_ROOT               - e.g. ".build/debug" (TODO: diff to Xcode)
+#   BUILD_CONFIG             - release or debug
+#   BUILD_PRODUCT            - e.g. ".build/mods_expressdemo.so"
+#   SPM_BUILD_CONFIG         - like CONFIGURATION, but always lowercase
+#   SWIFT_VERSION            - as emitted, e.g. 3.0.2 or 3.1
+#   SWIFT_MAJOR              - 3
+#   SWIFT_MINOR              - 1
+#   SWIFT_SUBMINOR_OPT       - empty or subminor if given (e.g. "" for 3.1)
+#   SWIFT_SUBMINOR           - subminor if given, else 0  (e.g. 0 for 3.1)
+#   APACHE_SERVER_CERT_DIR   - .e.g. $prefix/lib/mod_swift/certificates
+#   APACHE_SERVER_CERT       - .e.g. self-signed-mod_swift-localhost-server.crt
+#   APACHE_SERVER_KEY        - .e.g. self-signed-mod_swift-server.key
+# Also set if not set (as part of Xcode name migration)
+#   CONFIGURATION
+#   TARGET_NAME
+#   CONFIGURATION_BUILD_DIR
+#   FULL_PRODUCT_NAME
+#   BUILT_PRODUCTS_DIR
+#
+# TODO: rework to match Xcode names
+# - BUILD_MAIN => BUILD_ROOT
+# - BUILD_ROOT => CONFIGURATION_BUILD_DIR
+
+UNAME_S="`uname -s`"
+
+if [[ "x${SRCROOT}" = "x" ]]; then
+  SRCROOT="${PWD}"
+fi
+
+if ! hash apxs 2>/dev/null; then
+  if [[ "${UNAME_S}" = "Darwin" ]]; then
+    echo 1>&2 "ERROR: Missing Apache apxs, did you?:"
+    echo 1>&2 
+    echo 1>&2 "    brew install homebrew/apache/httpd24 --with-mpm-event --with-http2"
+    echo 1>&2 
+  else
+    echo 1>&2 "ERROR: Missing Apache apxs, did you?:"
+    echo 1>&2 
+    echo 1>&2 "    apt-get install apache2-dev ?"
+    echo 1>&2 
+  fi
+  exit 1
+fi
+
+P="\${exec_prefix}"
+APACHE_MODULE_RELDIR="`apxs -q | grep ^libexecdir= | sed s#libexecdir=$P/##g`"
+if [[ "${UNAME_S}" = "Darwin" ]]; then
+  APACHE_MODULE_DIR="${APACHE_MODULE_RELDIR}"
+else
+  APACHE_MODULE_DIR="`apxs -q exp_libexecdir`"
+fi
+
+
+MOD_SWIFT_PREFIX="$(dirname $(dirname "${BASH_SOURCE}"))"
+if [[ -d "${MOD_SWIFT_PREFIX}/lib/mod_swift" ]]; then
+  dummy=1
+elif [[ "${UNAME_S}" = "Darwin" ]]; then
+  if ! hash brew 2>/dev/null; then
+    echo 1>&2 "Missing Brew, did you install it?: https://brew.sh"
+    exit 2
+  fi
+  MOD_SWIFT_PREFIX="`brew --prefix mod_swift`"
+  if ! [[ "x${MOD_SWIFT_PREFIX}" = "x" ]]; then
+    if ! [[ -d "${MOD_SWIFT_PREFIX}" ]]; then
+      MOD_SWIFT_PREFIX=""
+    fi
+  fi
+  if [[ "x${MOD_SWIFT_PREFIX}" = "x" ]]; then
+    TEST_LOC="/usr/local/${APACHE_MODULE_RELDIR}/mod_swift.so"
+    if [[ -f "${TEST_LOC}" ]]; then
+      MOD_SWIFT_PREFIX="/usr/local"
+    else 
+      TEST_LOC="/usr/${APACHE_MODULE_RELDIR}/mod_swift.so"
+      if [[ -f "${TEST_LOC}" ]]; then
+        MOD_SWIFT_PREFIX="/usr"
+      fi
+    fi
+  fi
+  if [[ "x${MOD_SWIFT_PREFIX}" = "x" ]]; then
+    echo 1>&2 
+    echo 1>&2 "ERROR: Missing mod_swift, did you?:"
+    echo 1>&2 
+    echo 1>&2 "    brew install modswift/mod_swift/mod_swift --with-homebrew-httpd24"
+    echo 1>&2 
+    exit 3
+  fi
+else
+  TEST_LOC="/usr/local/${APACHE_MODULE_RELDIR}/mod_swift.so"
+  if [[ -f "${TEST_LOC}" ]]; then
+    MOD_SWIFT_PREFIX="/usr/local"
+  else 
+    TEST_LOC="/usr/${APACHE_MODULE_RELDIR}/mod_swift.so"
+    if [[ -f "${TEST_LOC}" ]]; then
+      MOD_SWIFT_PREFIX="/usr"
+    fi
+  fi
+  if [[ "x${MOD_SWIFT_PREFIX}" = "x" ]]; then
+    echo 1>&2 
+    echo 1>&2 "ERROR: Missing mod_swift, did you grab mod_swift and do a?:"
+    echo 1>&2 
+    echo 1>&2 "    ./configure; make install"
+    echo 1>&2 
+    exit 3
+  fi
+fi
+
+
+# detect module name
+
+if [[ "x${TARGET_NAME}" = "x" ]]; then
+  TARGET_NAME="`basename $PWD | tr "-" "_"`"
+fi
+if [[ "x${PRODUCT_NAME}" = "x" ]]; then
+  # TBD: is this correct? does it include an extension or sth?
+  PRODUCT_NAME="${TARGET_NAME}"
+fi
+if [[ "x${MODULE_NAME}" = "x" ]]; then
+  MODULE_NAME="${TARGET_NAME}" # TBD: use PRODUCT_NAME
+fi
+
+# TBD: questionable
+if [[ ${MODULE_NAME} != "mods_"* ]]; then
+  if [[ ${MODULE_NAME} != "mod_"* ]]; then
+    MODULE_NAME="mods_${MODULE_NAME}"
+  fi
+fi
+
+
+# Swift version
+
+SWIFT_VERSION="`swift --version | head -1 | sed 's/^.*[Vv]ersion[\t ]*\([.[:digit:]]*\).*$/\1/g'`"
+declare -a SWIFT_VERSION_LIST="(${SWIFT_VERSION//./ })"
+SWIFT_MAJOR=${SWIFT_VERSION_LIST[0]}
+SWIFT_MINOR=${SWIFT_VERSION_LIST[1]}
+SWIFT_SUBMINOR_OPT=${SWIFT_VERSION_LIST[2]}
+SWIFT_SUBMINOR=${SWIFT_SUBMINOR_OPT}
+if [[ "x${SWIFT_SUBMINOR}" = "x" ]]; then SWIFT_SUBMINOR=0; fi
+
+
+# do our work: parse arguments
+#   this is a little lame, because we require a single space ...
+
+if [[ "$ARGS" == *"-c release"* ]]; then
+  CONFIGURATION="release"
+elif [[ "$ARGS" == *"-configuration release"* ]]; then
+  CONFIGURATION="release"
+elif [[ "x${CONFIGURATION}" = "x" ]]; then
+  CONFIGURATION="debug"
+fi
+BUILD_CONFIG="${CONFIGURATION}"
+SPM_BUILD_CONFIG="`echo ${CONFIGURATION} | tr '[:upper:]' '[:lower:]'`"
+
+# TODO: different naming to Xcode, we override BUILD_ROOT below
+if [[ "x${BUILD_ROOT}" = "x" ]]; then
+  BUILD_MAIN=${PWD}/.build
+else
+  BUILD_MAIN="${BUILD_ROOT}"
+fi
+
+if [[ "x${CONFIGURATION_BUILD_DIR}" = "x" ]]; then
+  CONFIGURATION_BUILD_DIR="${BUILD_MAIN}/${BUILD_CONFIG}"
+fi
+BUILD_ROOT="${CONFIGURATION_BUILD_DIR}"
+
+if [[ "x${BUILT_PRODUCTS_DIR}" = "x" ]]; then
+  # Yes, we do not but this in the BUILD_CONFIG. TBD. Makes config easier.
+  # hh: config is now usually generated
+  BUILT_PRODUCTS_DIR="${BUILD_MAIN}"
+fi
+if [[ "x${FULL_PRODUCT_NAME}" = "x" ]]; then
+  FULL_PRODUCT_NAME="${MODULE_NAME}.so"
+fi
+BUILD_PRODUCT="${BUILT_PRODUCTS_DIR}/${FULL_PRODUCT_NAME}"
+
+
+# SSL certificates
+
+APACHE_SERVER_CERT_DIR="${APACHE_SERVER_CERT_DIR:-${MOD_SWIFT_PREFIX}/lib/mod_swift/certificates}"
+APACHE_SERVER_CERT="${APACHE_SERVER_CERT:-self-signed-mod_swift-localhost-server.crt}"
+APACHE_SERVER_KEY="${APACHE_SERVER_KEY:-self-signed-mod_swift-server.key}"
+if ! [[ -d "${APACHE_SERVER_CERT_DIR}" ]]; then
+  echo "WARN: could not locate directory w/ certs: ${APACHE_SERVER_CERT_DIR}"
+  APACHE_SERVER_CERT_DIR=/usr/local/lib/mod_swift/certificates
+fi
+if ! [[ -f "${APACHE_SERVER_CERT_DIR}/${APACHE_SERVER_CERT}" ]]; then
+  echo "WARN: missing SSL certificate: ${APACHE_SERVER_CERT_DIR}/${APACHE_SERVER_CERT}"
+  APACHE_SERVER_CERT=""
+fi
+if ! [[ -f "${APACHE_SERVER_CERT_DIR}/${APACHE_SERVER_KEY}" ]]; then
+  echo "WARN: missing SSL key: ${APACHE_SERVER_CERT_DIR}/${APACHE_SERVER_KEY}"
+  APACHE_SERVER_KEY=""
+fi
+
+
+# HTTP/2
+
+APACHE_HTTP2_LOAD_COMMAND=""
+APACHE_HAS_HTTP2=no
+HTTP2_MODULE_LOCATION="$(apxs -q exp_libexecdir)/mod_http2.so"
+if [[ -f "${HTTP2_MODULE_LOCATION}" ]]; then
+  APACHE_HAS_HTTP2=yes
+  if [[ "x$APACHE_SERVER_CERT" = "x" ]]; then
+    echo "WARN: HTTP/2 support is available but SSL is not configured?"
+  fi
+  
+  if [[ "${UNAME_S}" = "Darwin" ]]; then
+    APACHE_HTTP2_LOAD_COMMAND="LoadModule http2_module ${APACHE_MODULE_DIR}/mod_http2.so"
+  else
+    APACHE_HTTP2_LOAD_COMMAND="LoadModule http2_module ${APACHE_MODULE_DIR}/mod_http2.so"
+  fi
+else
+  echo "Note: did not find mod_http2 at: ${HTTP2_MODULE_LOCATION}"
+  HTTP2_MODULE_LOCATION=""
+  if [[ "${UNAME_S}" = "Darwin" ]]; then
+    echo ""
+    echo "To enable HTTP/2 support (recommended!), consider doing this:"
+    echo ""
+    echo "    brew reinstall homebrew/apache/httpd24 --with-mpm-event --with-http2"
+    echo ""
+  else
+    echo ""
+    echo "Install mod_http2 to enable HTTP/2 support (recommended!)"
+    echo ""
+  fi
+fi
+
+
+# Output configuration
+
+if ! [[ "x${EMBEDDED_VALIDATE}" = "xyes" ]]; then
+  echo "The Swift Apache build environment looks sound."
+  echo
+  echo "  srcroot:   ${SRCROOT}"
+  echo "  module:    ${MODULE_NAME}"
+  echo "  config:    ${BUILD_CONFIG}"
+  echo "  product:   ${BUILD_PRODUCT}"
+  echo "  apxs:      `which apxs`"
+  echo "  mod_swift: ${MOD_SWIFT_PREFIX}"
+  echo "  swift:     ${SWIFT_MAJOR}.${SWIFT_MINOR}.${SWIFT_SUBMINOR}"
+  echo "  cert:      ${APACHE_SERVER_CERT}"
+  echo "  http/2:    ${APACHE_HAS_HTTP2}"
+  echo
+fi
+
+fi # SWIFT_APACHE_VALIDATED

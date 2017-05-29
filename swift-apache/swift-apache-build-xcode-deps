@@ -1,0 +1,226 @@
+#!/bin/bash
+#
+# swift-apache -- A collection of SwiftPM extension to deal with building
+# Apache modules.
+#
+# Check out the website:
+#     http://mod-swift.org/
+#
+# Copyright 2017 ZeeZide GmbH. All rights reserved.
+#
+
+ARGS="$@"
+
+if [[ "x${SRCROOT}" = "x" ]]; then
+  echo "Not running as part of Xcode?!"
+  exit 42
+fi
+
+# Setup environment
+
+SPM_BUILD_CONFIG="`echo ${CONFIGURATION} | tr '[:upper:]' '[:lower:]'`"
+SPM_BUILD_DIR="${SRCROOT}/${PRODUCT_NAME}/.build"
+SPM_MODULE_BUILD_SUFFIX=".build"
+
+SPM_CONFIG="${SRCROOT}/${PRODUCT_NAME}/Package.swift"
+
+SA_LIBRARY_NAME="${SA_LIBRARY_NAME:-lib${PRODUCT_NAME}Dependencies.a}"
+SA_LIBRARY_PATH="${SPM_BUILD_DIR}/${SPM_BUILD_CONFIG}/${SA_LIBRARY_NAME}"
+
+SA_FETCH_TOUCH="${SPM_BUILD_DIR}/.xcode-sa-fetch.touch"
+SA_BUILD_TOUCH="${SPM_BUILD_DIR}/.xcode-sa-build.touch"
+mkdir -p "${SPM_BUILD_DIR}"
+
+
+# Fetch dependencies when necessary
+
+# TBD: comparing the directory timestamp doesn't fly (created once, always
+#      older). How can we refetch on Package.swift changes?
+#      => timestamp file!
+if [[ ( "${SA_FETCH_TOUCH}" -nt "${SPM_CONFIG}" ) && ( -d "${SRCROOT}/${PRODUCT_NAME}/Packages" ) ]]; then
+  echo "Swift 3.0 'Packages' directory exists and is up to date"
+elif [[ ( "${SA_FETCH_TOUCH}" -nt "${SPM_CONFIG}" ) && ( -d "${SPM_BUILD_DIR}/checkouts" ) ]]; then
+  echo "Swift 3.1 '.build/checkouts' directory exists and is up to date"
+else
+  # Do a fetch
+  echo "Fetch package dependencies .."
+  touch "${SA_FETCH_TOUCH}"
+  swift package -C "${SRCROOT}/${PRODUCT_NAME}" fetch
+fi
+
+
+if [[ -d "${SRCROOT}/${PRODUCT_NAME}/Packages" ]]; then # 3.0
+  PACKAGE_CHECKOUT_DIR="${SRCROOT}/${PRODUCT_NAME}/Packages"
+  PACKAGE_CHECKOUT_RELDIR="../Packages"
+elif [[ -d "${SPM_BUILD_DIR}/checkouts" ]]; then
+  PACKAGE_CHECKOUT_DIR="${SPM_BUILD_DIR}/checkouts"
+  PACKAGE_CHECKOUT_RELDIR="../.build/checkouts"
+else
+  echo "swift package fetch failed."
+  exit 42
+fi
+
+
+# Build dependencies when necessary
+
+if [[ "${SA_BUILD_TOUCH}" -nt "${SA_FETCH_TOUCH}" && -f ${SA_LIBRARY_PATH} ]]; then
+  echo "Dependency archive is up to date: ${SA_LIBRARY_NAME}"
+else
+  # TODO: check whether .build timestamp is older than Package.swift?
+  #       - we really want packages.swift (via jq)...
+  # TODO: Debug vs Release (lowercase CONFIGURATION)
+  # TODO: do not use PRODUCT_NAME but what Package.swift has
+  # TODO: maybe relocate build path to Xcode build path (makes include easier?)
+  echo "Building dependencies ..."
+  
+  swift build -C "${SRCROOT}/${PRODUCT_NAME}"
+  
+  # builds all, we really just want the deps TODO uh oh :-)
+  rm -rf "${SPM_BUILD_DIR}/${SPM_BUILD_CONFIG}/${PRODUCT_NAME}${SPM_MODULE_BUILD_SUFFIX}"
+  
+  # all the rest should be dependencies, link them
+  
+  rm -f "${SA_LIBRARY_PATH}"
+  SPM_DEPENDENCIES="`ls -d ${SPM_BUILD_DIR}/${SPM_BUILD_CONFIG}/*${SPM_MODULE_BUILD_SUFFIX}`"
+  for DEP in ${SPM_DEPENDENCIES}; do
+    echo -n "  Archiving dependency: `basename ${DEP} | sed s#.build##g` .."
+    ar rc "${SA_LIBRARY_PATH}" `find "${DEP}" -name *.o`
+    rc=$?
+    if [[ $rc -ne 0 ]]; then 
+      echo "Archiving failed"
+      exit $rc
+    fi
+    echo ".. OK."
+  done
+  ranlib "${SA_LIBRARY_PATH}"
+  touch ${SA_BUILD_TOUCH}
+  
+  # setup CApache
+  # TODO: move out
+  cd "${PACKAGE_CHECKOUT_DIR}"
+  CAPACHE_LAST="`ls -d CApache* | sort -r | head -n 1`"
+  if [[ "x${CAPACHE_LAST}" = "x" ]]; then
+    echo "Could not detect latest CApache."
+    exit 42
+  fi
+  cd ${SPM_BUILD_DIR}/
+  ln -sf "${PACKAGE_CHECKOUT_RELDIR}/${CAPACHE_LAST}" CApache
+fi
+
+
+# Generate Apache.conf when necessary
+
+# FIXME: if there is no config, determine freshness by other means
+
+export DOCROOT_BASEDIR="${SRCROOT}/${PRODUCT_NAME}"
+export APACHE_CONFIG="${BUILD_DIR}/apache.conf"
+export MODULE_NAME="mods_${PRODUCT_NAME}"
+SA_MODULE_CONFIG_TEMPLATE_FILE="${MODULE_NAME}-template.conf"
+SA_MODULE_CONFIG_FILE="${MODULE_NAME}.conf"
+if [[ "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_TEMPLATE_FILE}" -nt "${APACHE_CONFIG}" || "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_FILE}" -nt "${APACHE_CONFIG}" ]]; then
+  . swift-apache-genconfig --xcode
+  rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+
+  echo "Generated Apache config w/ module:"
+  echo "  ${APACHE_CONFIG}"
+elif [[ -f "${APACHE_CONFIG}" ]]; then
+  echo "Apache config exists and is up to date:"
+  echo "  ${APACHE_CONFIG}"
+else
+  . swift-apache-genconfig --xcode
+  rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+
+  echo "Generated generic Apache config:"
+  echo "  ${APACHE_CONFIG}"
+fi
+
+if [[ "$SPM_BUILD_CONFIG" = "debug" ]]; then
+  echo "  Scheme arguments for httpd:"
+  echo "-X -f \$(BUILD_DIR)/apache.conf"
+else
+  echo "  Scheme arguments for httpd:"
+  echo "-f \$(BUILD_DIR)/apache.conf"
+fi
+
+
+# Generate a link to Apache.
+# Otherwise it is hard to locate when setting up the run config.
+
+if [[ ! -x "${BUILD_DIR}/apache-binary" ]]; then
+  HTTPD_NAME="`apxs -q progname`"
+  BIN_DIR="`apxs -q exp_bindir`"
+  HTTPD_PATH="${BIN_DIR}/${HTTPD_NAME}"
+
+  if [[ ! -x "${HTTPD_PATH}" ]]; then
+    SBIN_DIR="`apxs -q exp_sbindir`"
+    HTTPD_PATH="${SBIN_DIR}/${HTTPD_NAME}"
+  fi
+
+  if [[ ! -x "${HTTPD_PATH}" ]]; then
+    echo 1>&2 "ERROR: Missing ${HTTPD_NAME}, did you?:"
+    echo 1>&2
+    echo 1>&2 "    brew install homebrew/apache/httpd24 --with-mpm-event --with-http2"
+    echo 1>&2 "    brew install helje5/mod_swift/mod_swift"
+    echo 1>&2
+    exit 44
+  fi
+  
+  echo "Setup apache-binary link: ${HTTPD_PATH}"
+  ln -s "${HTTPD_PATH}" "${BUILD_DIR}/apache-binary"  
+  ${BUILD_DIR}/apache-binary -v
+fi
+echo "Apache-binary link: ${BUILD_DIR}/apache-binary"
+
+
+# Hack Scheme - once only
+# - moved to the end to make the timeout work. If we touch the project while
+#   building, the build stops!
+#./TestApex5.xcodeproj/xcuserdata/helge.xcuserdatad/xcschemes/TestApex5.xcscheme
+SA_SCHEME_DIR="${SRCROOT}/${PRODUCT_NAME}.xcodeproj/xcuserdata/${USER}.xcuserdatad/xcschemes"
+SA_SCHEMES_FILE="${SA_SCHEME_DIR}/xcschememanagement.plist"
+SA_SCHEME_FILE="${SA_SCHEME_DIR}/${PRODUCT_NAME}.xcscheme"
+SA_RUN_SCHEME_FILE="${SA_SCHEME_DIR}/Apache-${PRODUCT_NAME}.xcscheme"
+SA_SCHEME_TOUCH="${SA_SCHEME_DIR}/.xcode-sa-patched.touch"
+if [[ -f "${SA_SCHEME_FILE}" && ! -f "${SA_SCHEME_TOUCH}" ]]; then
+  if ! grep -q PathRunnable "${SA_SCHEME_FILE}"; then
+    if hash xmlstarlet 2>/dev/null; then
+      echo "Adding run-config to scheme (only once) ..."
+      echo "Patch scheme: ${SA_SCHEME_FILE}"
+  
+      # funny enough, cannot do $(BUILD_DIR) in here
+      # Details:  Path must be absolute but is not: $(BUILD_DIR)/apache-binary
+      # --subnode "/Scheme/LaunchAction/PathRunnable" --type attr -n runnableDebuggingMode -v '0' \
+      # runnableDebuggingMode redefined
+      xmlstarlet ed \
+        --subnode "/Scheme/LaunchAction" --type elem -n "PathRunnabl"e -v '' \
+        --subnode "/Scheme/LaunchAction/PathRunnable" --type attr -n FilePath -v "${BUILD_DIR}/apache-binary" \
+          \
+        --subnode "/Scheme/LaunchAction" --type elem -n "CommandLineArguments" -v '' \
+        --subnode "/Scheme/LaunchAction/CommandLineArguments" --type elem -n "CommandLineArgument" -v '' \
+        --subnode "/Scheme/LaunchAction/CommandLineArguments/CommandLineArgument" --type attr -n "argument"  -v '-X'  \
+        --subnode "/Scheme/LaunchAction/CommandLineArguments/CommandLineArgument" --type attr -n "isEnabled" -v 'YES' \
+        --subnode "/Scheme/LaunchAction/CommandLineArguments" --type elem -n "CommandLineArgument" -v '' \
+        --subnode "/Scheme/LaunchAction/CommandLineArguments/CommandLineArgument[last()]" --type attr -n "argument"  -v '-f $(BUILD_DIR)/apache.conf' \
+        --subnode "/Scheme/LaunchAction/CommandLineArguments/CommandLineArgument[last()]" --type attr -n "isEnabled" -v 'YES' \
+        \
+        --subnode "/Scheme/LaunchAction" --type elem -n "EnvironmentVariables" -v '' \
+        --subnode "/Scheme/LaunchAction/EnvironmentVariables" --type elem -n "EnvironmentVariable" -v '' \
+        --subnode "/Scheme/LaunchAction/EnvironmentVariables/EnvironmentVariable" --type attr -n "key" -v 'EXPRESS_VIEWS' \
+        --subnode "/Scheme/LaunchAction/EnvironmentVariables/EnvironmentVariable" --type attr -n "value" -v '$(SRCROOT)/$(PRODUCT_NAME)/views' \
+        --subnode "/Scheme/LaunchAction/EnvironmentVariables/EnvironmentVariable" --type attr -n isEnabled -v 'YES' \
+        \
+        "${SA_SCHEME_FILE}" > "${SA_SCHEME_FILE}.new"
+      cp "${SA_SCHEME_FILE}.new" "${SA_SCHEME_FILE}"
+      rm "${SA_SCHEME_FILE}.new"
+  
+      touch "${SA_SCHEME_TOUCH}"
+  
+      # this stuff cancels the build! but is necessary to update Xcode
+      ( sleep 2; touch "${SRCROOT}/${PRODUCT_NAME}.xcodeproj/project.pbxproj" ) &
+    else
+      echo 1>&2 "ERROR: Missing `xmlstarlet`, can't patch."
+      echo "To install XML starlet, run:"
+      echo "  brew install xmlstarlet"
+    fi
+  fi
+fi

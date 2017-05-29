@@ -1,0 +1,125 @@
+#!/bin/bash
+#
+# swift-apache -- A collection of SwiftPM extension to deal with building
+# Apache modules.
+#
+# Check out the website:
+#     http://mod-swift.org/
+#
+# Copyright 2017 ZeeZide GmbH. All rights reserved.
+#
+
+ARGS="$@"
+
+# TODO:
+# - generate htdocs / public folder
+#   - fill with an index.html
+# - generate module.conf
+#   - maybe add a module for handler
+# - many more options to adjust the generation process
+
+# check whether environment is sound
+
+EMBEDDED_VALIDATE=yes . swift-apache-validate
+rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+
+
+# templates
+
+read -r -d '' PACKAGE_TEMPLATE <<EOF
+import PackageDescription
+
+let package = Package(
+    name: "%MODULE_NAME%",
+
+    dependencies: [
+      .Package(url: "git@github.com:helje5/Apache.git", majorVersion: 0)
+    ]
+)
+EOF
+
+read -r -d '' APACHE_MAIN <<EOF
+// mod_swift on the ZeeZide
+
+import CApache
+import Apache
+
+var module = CApache.module(name: "%MODULE_NAME%")
+
+fileprivate func register_hooks(pool: OpaquePointer?) {
+  // e.g. ap_hook_handler(%MODULE_NAME%Handler, nil, nil, APR_HOOK_MIDDLE)
+}
+
+@_cdecl("ApacheMain")
+public func ApacheMain(cmd: UnsafeMutablePointer<cmd_parms>) {
+  module.register_hooks = register_hooks
+  
+  let rc = apz_register_swift_module(cmd, &module)
+  assert(rc == APR_SUCCESS, "Could not add Swift module!")
+}
+EOF
+
+read -r -d '' GIT_IGNORE <<EOF
+.DS_Store
+
+## Build generated
+build
+DerivedData
+
+## Other
+*.moved-aside
+*.xcuserstate
+
+## Obj-C/Swift specific
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+Packages
+.httpd.pid
+EOF
+
+
+# setup
+
+if ! test -f .gitignore; then
+  echo "${GIT_IGNORE}" > .gitignore
+fi
+
+if ! test -d Sources; then
+  mkdir Sources
+  echo "${APACHE_MAIN}" \
+    | sed "s#%MODULE_NAME%#${MODULE_NAME}#g"   \
+    > "Sources/${MODULE_NAME}.swift"
+else
+  echo "Sources already setup, not generating."
+fi
+
+if ! test -f Package.swift; then
+  echo "${PACKAGE_TEMPLATE}" \
+    | sed "s#%MODULE_NAME%#${MODULE_NAME}#g"   \
+    > "Package.swift"
+fi
+
+
+# TODO: create htdocs and index.html
+# TODO: create a module.conf
+#         <LocationMatch /todomvc/*>
+#           SetHandler de.zeezide.ApacheExpress
+#         </LocationMatch>
+
+
+
+# debug
+
+echo "The Swift Apache build environment looks sound."
+echo
+echo "  module:    ${MODULE_NAME}"
+echo "  config:    ${CONFIGURATION}"
+echo "  product:   ${BUILD_PRODUCT}"
+echo "  apxs:      `which apxs`"
+echo "  mod_swift: ${MOD_SWIFT_PREFIX}"
+echo

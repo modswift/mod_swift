@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# swift-apache -- A collection of SwiftPM extension to deal with building
+# Apache modules.
+#
+# Check out the website:
+#     http://mod-swift.org/
+#
+# Copyright 2017 ZeeZide GmbH. All rights reserved.
+#
+
+# `swift apache clean` is just here to mirror the `swift package clean` 
+# introduced in Swift 3.1 (which deprecated `swift build --clean`)
+
+# TBD: not sure what flags `swift package clean` supports, the --help doesn't
+#      say anything :-)
+swift-apache-build --clean $@
