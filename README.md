@@ -34,8 +34,8 @@ and Swift-C binding limitations.
 
 ### Documentation
 
-You can find the mod_swift documentation over here:
-[docs.mod-swift.org/](http://docs.mod-swift.org/).
+You can find pretty neat mod_swift documentation over here:
+[docs.mod-swift.org](http://docs.mod-swift.org/).
 
 ### Status
 
