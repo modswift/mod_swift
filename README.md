@@ -32,96 +32,10 @@ and Swift-C binding limitations.
           The latter provides a very convenient Node.js/ExpressJS like API
           which makes it very easy to write modules.
 
-### How to use the module in Apache
+### Documentation
 
-Before you can load a Swift Apache module, you need to load mod_swift into
-Apache:
-
-```Swift
-LoadModule swift_module .libs/mod_swift.so
-```
-
-This exposes a new Apache directive called `LoadSwiftModule` which is used to
-load Swift based Apache modules into the server. Example:
-
-```Swift
-
-LoadSwiftModule ApacheMain .libs/mods_demo.so
-```
-
-### What is an Apache module?
-
-Well, Apache is a highly modular and efficient server framework. The httpd
-daemon itself is quite tiny and pretty much all webserver functionality is
-actually implemented in the form of
-[modules](https://httpd.apache.org/docs/2.4/mod/).
-Be it thread handling, access control, mime detection or content negotation -
-all of that is implemented as modules. And can be replaced by own modules!
-
-The Apache core modules are written in portable C. Some modules are built
-right into the server, but most are loaded as
-[dynamic libraries](https://developer.apple.com/library/content/documentation/DeveloperTools/Conceptual/DynamicLibraries/000-Introduction/Introduction.html).
-Which ones is specified by the user in the
-[configuration file](https://httpd.apache.org/docs/2.4/configuring.html), e.g.:
-
-    LoadModule authz_core_module /usr/libexec/apache2/mod_authz_core.so
-    LoadModule mime_module       /usr/libexec/apache2/mod_mime.so
-
-Now with **mod_swift** you can write such modules using the
-[Swift](http://swift.org/)
-programming language. Enter:
-
-    LoadSwiftModule ApacheMain /usr/libexec/apache2/mods_demo.so
-
-This is a little different to something like `mod_php` which enables Apache
-to directly interpret PHP scripts. `mod_php` itself is C software and a single
-module.
-Since Swift compiles down to regular executable binaries,
-and because Swift has excellent 
-[C integration](https://developer.apple.com/library/content/documentation/Swift/Conceptual/BuildingCocoaApps/InteractingWithCAPIs.html#//apple_ref/doc/uid/TP40014216-CH8-ID17),
-you can write arbitrary modules with **mod_swift** which behave just like the
-regular C modules.
-
-
-### Notes of interest
-
-- The code is 
-  [properly formatted](http://www.alwaysrightinstitute.com/swifter-space/),
-  max width 80 chars, 2-space indent.
-- Sure, you can link against arbitrary Swift dylibs, 
-  [mustache](Sources/mustache/) is an example for exactly that.
-- However, you currently cannot use the Swift Package Manager to create
-  dylibs (AFAIK). So while in theory that would work, you need to do the
-  final linking step separately.
-- Yes `mod_swift` itself could be avoided by including the .c in the Swift
-  module. Yes, you can even statically link Swift including its runtime. Let
-  me know if this is interesting, I have a branch which does exactly that.
-- If you would want to debug the stuff in Xcode - `/usr/sbin/httpd` is under
-  [macOS SIP](https://support.apple.com/en-us/HT204899).
-- On macOS 10.11 starting Apache with -X crashes a few seconds after the last
-  request was received. Maybe just SIGPIPE or sth. 10.12 looks fine.
-- Yes, Apache content handlers are not [Noze.io](http://noze.io/) like 
-  asynchronous but run in a traditional, synchronous thread-setup.
-- Apache varargs funcs are not available since Swift doesn't support such. We
-  provide a wrapper for `ap_log_rerror_`, other funcs would need to be wrapped
-  the same way.
-- Apache also uses quite a few `#define`s, e.g. `ap_fwrite`
-- The Apache C headers are prone to crash `swiftc`. Which is why we wrap the
-  Apache `request_rec` in an additional struct.
-
-              (__)
-            /  .\/.     ______
-           |  /\_|     |      \
-           |  |___     |       |
-           |   ---@    |_______|
-        *  |  |   ----   |    |
-         \ |  |_____
-          \|________|
-    [CompuCow Discovers Bug in Compiler](http://zeezide.com/en/products/codecows/index.html)
-
-Oh, ages ago I did
-[mod_objc](https://github.com/AlwaysRightInstitute/mod_objc1)
-for Apache 1.3.
+You can find the mod_swift documentation over here:
+[docs.mod-swift.org/](http://docs.mod-swift.org/).
 
 ### Status
 
