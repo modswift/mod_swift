@@ -33,7 +33,8 @@ let package = Package(
     name: "%MODULE_NAME%",
 
     dependencies: [
-      .Package(url: "git@github.com:helje5/Apache.git", majorVersion: 0)
+      .Package(url: "https://github.com/modswift/Apache.git", 
+               majorVersion: 0)
     ]
 )
 EOF
@@ -46,8 +47,29 @@ import Apache
 
 var module = CApache.module(name: "%MODULE_NAME%")
 
+func %MODULE_NAME%Handler(p: UnsafeMutablePointer<request_rec>?) -> Int32 {
+  // example content handler, modify to your liking
+  var req = ApacheRequest(raw: p!)
+  
+  req.contentType = "text/html; charset=ascii"
+  req.puts("<html><head><title>Hello mod_swift</title>\(semanticUI)</head>")
+  req.puts("<body><div class='ui main container' style='margin-top: 1em;'>")
+  req.puts("<h3>Welcome to %MODULE_NAME%</h3>")
+  defer { req.puts("</div></body></html>") }
+  
+  req.puts("<h4>Links of Interest</h4>")
+  req.puts("<ul>")
+  req.puts("  <li><a href='http://mod-swift.org/'>mod-swift.org</a></li>")
+  req.puts("  <li><a href='http://apacheexpress.io/'>ApacheExpress</a></li>")
+  req.puts("  <li><a href='https://httpd.apache.org/'>Apache</a></li>")
+  
+  req.puts("</ul>")
+  return OK
+}
+
 fileprivate func register_hooks(pool: OpaquePointer?) {
-  // e.g. ap_hook_handler(%MODULE_NAME%Handler, nil, nil, APR_HOOK_MIDDLE)
+  // hookup the handlers you want
+  ap_hook_handler(%MODULE_NAME%Handler, nil, nil, APR_HOOK_MIDDLE)
 }
 
 @_cdecl("ApacheMain")
