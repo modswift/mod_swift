@@ -74,9 +74,10 @@ else
   APACHE_MODULE_DIR="`apxs -q exp_libexecdir`"
 fi
 
-
+# check where the script lives, and then whether it has a module laying
+# beside it. Note: /usr/local w/ brew has no libexec!
 MOD_SWIFT_PREFIX="$(dirname $(dirname "${BASH_SOURCE}"))"
-if [[ -d "${MOD_SWIFT_PREFIX}/lib/mod_swift" ]]; then
+if [[ -d "${MOD_SWIFT_PREFIX}/libexec/mod_swift.so" ]]; then
   dummy=1
 elif [[ "${UNAME_S}" = "Darwin" ]]; then
   if ! hash brew 2>/dev/null; then
