@@ -9,6 +9,7 @@ ifeq ($(USE_APXS),no)
   endif
 endif
 
+LLDB_INIT_FILE = $(HOME)/.lldbinit
 
 APXS_OUTDIR = .libs
 APACHE_C_MODULE_BUILD_RESULT = $(APXS_OUTDIR)/$(PACKAGE)$(APACHE_MODULE_SUFFIX)
@@ -47,7 +48,27 @@ distclean : clean
 	rm -rf $(APXS_OUTDIR)
 	rm -f config.make
 
-install : all
+install-lldbinit:
+	@if test "$(UNAME_S)" = "Darwin"; then \
+	  if test -f "$(LLDB_INIT_FILE)"; then \
+	    if ! grep -q SIGPIPE "$(LLDB_INIT_FILE)"; then \
+	      echo "NOTE: adding SIGPIPE handling to your ~/.lldbinit ..."; \
+	      echo "" >> "$(LLDB_INIT_FILE)";\
+	      echo "# mod-swift.org: ignore httpd SIGPIPE's in debugger" \
+	           >> "$(LLDB_INIT_FILE)";\
+	      echo "process handle SIGPIPE -n true -p true -s false" \
+	           >> "$(LLDB_INIT_FILE)";\
+	    fi; \
+	  else \
+	    echo "NOTE: creating an ~/.lldbinit for Xcode ..."; \
+	    echo "# mod-swift.org: ignore httpd SIGPIPE's in debugger" \
+	         >> "$(LLDB_INIT_FILE)";\
+	    echo "process handle SIGPIPE -n true -p true -s false" \
+	         >> "$(LLDB_INIT_FILE)";\
+	  fi \
+	fi
+
+install : all install-lldbinit
 	$(MKDIR_P) $(APACHE_MODULE_INSTALL_DIR) \
 		   $(HEADER_FILES_INSTALL_DIR)  \
 		   $(PKGCONFIG_INSTALL_DIR)	\
