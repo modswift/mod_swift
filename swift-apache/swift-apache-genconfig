@@ -76,8 +76,18 @@ elif [[ -d "${DOCROOT_BASEDIR}/public" ]]; then
 else
   DOCROOT_BASEDIR=
   APACHE_DOCROOT="`apxs -q htdocsdir`"
-  echo "Note: DocRoot ${APACHE_DOCROOT}"
-fi  
+  if ! [[ -d "${APACHE_DOCROOT}" ]]; then
+    # on Ubuntu apxs reports an incorrect directory (adds an extra 'htdocs') ...
+    TESTDIR="$(dirname ${APACHE_DOCROOT})"
+    if [[ -d "${TESTDIR}" ]]; then
+      APACHE_DOCROOT="${TESTDIR}"
+    else
+      echo 1>&2 "ERROR: did not find document root: ${APACHE_DOCROOT}"
+      exit 13
+    fi
+  fi
+  echo "Note: DocRoot ${APACHE_DOCROOT} (create a 'public' dir to use an own one)"
+fi
 
 
 # Note: can also be provided as apache-template.conf file by module!
