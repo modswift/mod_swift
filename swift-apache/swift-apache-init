@@ -27,6 +27,8 @@ rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
 # templates
 
 read -r -d '' PACKAGE_TEMPLATE <<EOF
+// swift-tools-version:3.1
+
 import PackageDescription
 
 let package = Package(
