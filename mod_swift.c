@@ -66,16 +66,21 @@ static const char *cmdLoadSwiftModule
     const char *mep;
     
     const char *typeVariants[] = {
-      // Swift 3.0
-      "FVs13OpaquePointerT_",           // ApacheMain(_:)
-      "FT3cmdVs13OpaquePointerT_",      // ApacheMain(cmd:)
-      "FT7commandVs13OpaquePointerT_",  // ApacheMain(command:)
+      // Swift 4 mangling
+      "ys13OpaquePointerVF",
       // Swift 3.1 (is that change for realz?)
       "FVs13OpaquePointer_T_",          // ApacheMain(_:)
       "FT3cmdVs13OpaquePointer_T_",     // ApacheMain(cmd:)
       "FT7commandVs13OpaquePointer_T_", // ApacheMain(command:)
+      // Swift 3.0
+      "FVs13OpaquePointerT_",           // ApacheMain(_:)
+      "FT3cmdVs13OpaquePointerT_",      // ApacheMain(cmd:)
+      "FT7commandVs13OpaquePointerT_",  // ApacheMain(command:)
       NULL
     };
+    
+    // _TF8WebPackS10ApacheMain FT7commandVs13OpaquePointer_T_
+    // _T08WebPackS10ApacheMain ys13OpaquePointerVF
     
     for (const char **p = typeVariants; eph == NULL && *p != NULL; p++) {
       const char *mep = apr_psprintf(cmd->pool,
@@ -83,6 +88,11 @@ static const char *cmdLoadSwiftModule
                                      modlen, moduleName, eplen, entryPoint, *p);
       if (apr_dso_sym(&eph, fh, mep) != APR_SUCCESS || eph == NULL) {
         eph = NULL;
+        mep = apr_psprintf(cmd->pool, "_T0%lu%s%lu%s%s", // Swift 4
+                           modlen, moduleName, eplen, entryPoint, *p);
+        if (apr_dso_sym(&eph, fh, mep) != APR_SUCCESS || eph == NULL) {
+          eph = NULL;
+        }
       }
     }
     
@@ -94,6 +104,12 @@ static const char *cmdLoadSwiftModule
                                        eplen, entryPoint, *p);
         if (apr_dso_sym(&eph, fh, mep) != APR_SUCCESS || eph == NULL) {
           eph = NULL;
+          mep = apr_psprintf(cmd->pool, "_T0%lu%s%lu%s%s", // Swift 4
+                                        modlen - 5, moduleName + 5, 
+                                        eplen, entryPoint, *p);
+          if (apr_dso_sym(&eph, fh, mep) != APR_SUCCESS || eph == NULL) {
+            eph = NULL;
+          }
         }
       }
     }
