@@ -66,12 +66,15 @@ if ! hash apxs 2>/dev/null; then
   exit 1
 fi
 
-P="\${exec_prefix}"
-APACHE_MODULE_RELDIR="`apxs -q | grep ^libexecdir= | sed s#libexecdir=$P/##g`"
-if [[ "${UNAME_S}" = "Darwin" ]]; then
-  APACHE_MODULE_DIR="${APACHE_MODULE_RELDIR}"
-else
-  APACHE_MODULE_DIR="`apxs -q exp_libexecdir`"
+# FIXME: all this is a little lame
+P="\${exec_prefix}" # a pattern as part of the path
+APACHE_MODULE_DIR="`apxs -q exp_libexecdir`"
+APACHE_MODULE_RELDIR="`apxs -q | grep ^libexecdir= | sed s#libexecdir=$P/##g | sed s#^libexecdir=${APACHE_MODULE_DIR}/##g | sed s#^libexecdir=${APACHE_MODULE_DIR}##g`"
+if [[ "${APACHE_MODULE_RELDIR:0:1}" == / || "${APACHE_MODULE_RELDIR:0:2}" == ~[/a-z] ]]; then
+  echo "ERROR: module reldir is absolute?!: ${APACHE_MODULE_RELDIR}"
+fi
+if [[ "x${APACHE_MODULE_RELDIR}" = "x" ]]; then
+  APACHE_MODULE_RELDIR="/" # needs to have a slash
 fi
 
 # check where the script lives, and then whether it has a module laying
@@ -102,10 +105,26 @@ elif [[ "${UNAME_S}" = "Darwin" ]]; then
     fi
   fi
   if [[ "x${MOD_SWIFT_PREFIX}" = "x" ]]; then
+    TEST_LOC="${APACHE_MODULE_DIR}/mod_swift.so"
+    if [[ -f "${TEST_LOC}" ]]; then
+      # this is the install prefix, not the loc of mod_swift.so
+      if [[ "${APACHE_MODULE_DIR}" = /usr/local/* ]]; then
+        MOD_SWIFT_PREFIX="/usr/local"
+      else
+        if [[ "${APACHE_MODULE_DIR}" = /usr/* ]]; then
+          MOD_SWIFT_PREFIX="/usr"
+        else
+          echo "Failed to detect mod_swift prefix from ${APACHE_MODULE_DIR}"
+          exit 42
+        fi
+      fi
+    fi
+  fi
+  if [[ "x${MOD_SWIFT_PREFIX}" = "x" ]]; then
     echo 1>&2 
     echo 1>&2 "ERROR: Missing mod_swift, did you?:"
     echo 1>&2 
-    echo 1>&2 "    brew install modswift/mod_swift/mod_swift --with-homebrew-httpd24"
+    echo 1>&2 "    brew install modswift/mod_swift/mod_swift --with-homebrew-httpd"
     echo 1>&2 
     exit 3
   fi
@@ -260,6 +279,8 @@ if ! [[ "x${EMBEDDED_VALIDATE}" = "xyes" ]]; then
   echo "  config:    ${BUILD_CONFIG}"
   echo "  product:   ${BUILD_PRODUCT}"
   echo "  apxs:      `which apxs`"
+  echo "  moddir:    ${APACHE_MODULE_DIR}"
+  echo "  relmoddir: ${APACHE_MODULE_RELDIR}"
   echo "  mod_swift: ${MOD_SWIFT_PREFIX}"
   echo "  swift:     ${SWIFT_MAJOR}.${SWIFT_MINOR}.${SWIFT_SUBMINOR}"
   echo "  cert:      ${APACHE_SERVER_CERT}"
