@@ -4,6 +4,7 @@ ServerAdmin wrong@alwaysrightinstitute.com
 ServerName  localhost
 Listen      %APACHE_PORT%
 
+LoadModule mpm_event_module       %APACHE_MODULE_DIR%/mod_mpm_event.so
 LoadModule authz_core_module      %APACHE_MODULE_DIR%/mod_authz_core.so
 LoadModule filter_module          %APACHE_MODULE_DIR%/mod_filter.so
 LoadModule mime_module            %APACHE_MODULE_DIR%/mod_mime.so

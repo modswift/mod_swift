@@ -145,7 +145,10 @@ ifeq ($(APACHE_MODULE_INSTALL_DIR),)
   ifeq ($(USE_APXS),yes)
     # Hm, with brew apxs this just has `libexec` instead of `libexec/apache2`
     # On Trusty it has the full path (${exec_prefix}/lib/apache2/modules)
-    APACHE_MODULE_RELDIR=$(shell apxs -q | grep ^libexecdir | sed "s/libexecdir=.*}//g" )
+    # On 10.13 Brew this is absolute and doesn't contain the ${prefix} pattern,
+    # but a FQP /usr/local/lib/httpd/modules
+    APACHE_MODULE_RELDIR=$(shell apxs -q | grep ^libexecdir | sed "s/libexecdir=.*}//g" | sed "sTlibexecdir=$(prefix)TTg" | sed "s/libexecdir=//g" )
+    #$(error "KK $(APACHE_MODULE_RELDIR) $(prefix)")
   else
     ifeq ($(UNAME_S),Darwin)
       APACHE_MODULE_RELDIR="/libexec/apache2"

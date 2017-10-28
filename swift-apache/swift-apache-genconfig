@@ -62,6 +62,10 @@ APACHE_PIDFILE="${PWD}/.httpd.pid"
 
 DOCROOT_BASEDIR=${DOCROOT_BASEDIR:-${SRCROOT}}
 
+# /usr/local/lib/httpd/modules/lib/mod_swift/apache-config-templates/mod_swift-macosx-debug.conf.template
+
+# /usr/local//lib/mod_swift/apache-config-templates/mod_swift-macosx-debug.conf.template
+
 APACHE_CONFIG_TEMPLATES_INSTALL_DIR=${APACHE_CONFIG_TEMPLATES_INSTALL_DIR:-${MOD_SWIFT_PREFIX}/lib/mod_swift/apache-config-templates}
 
 
@@ -131,7 +135,12 @@ if [[ ! -f apache.conf ]]; then
   
   if [[ ${MODULE_NAME} != "mod_"* ]]; then
     echo >> "${APACHE_CONFIG}"
-    echo >> "${APACHE_CONFIG}" "LoadModule swift_module ${MOD_SWIFT_PREFIX}/${APACHE_MODULE_RELDIR}/mod_swift.so"
+    # I don't know, this is weird
+    if [[ "${UNAME_S}" = "Darwin" ]]; then
+      echo >> "${APACHE_CONFIG}" "LoadModule swift_module ${APACHE_MODULE_DIR}/mod_swift.so"
+    else
+      echo >> "${APACHE_CONFIG}" "LoadModule swift_module ${MOD_SWIFT_PREFIX}/${APACHE_MODULE_RELDIR}mod_swift.so"
+    fi
   fi
   
   MODULE_CONFIG_TEMPLATE_FILE="${MODULE_NAME}-template.conf"
