@@ -143,20 +143,34 @@ endif
 
 ifeq ($(APACHE_MODULE_INSTALL_DIR),)
   ifeq ($(USE_APXS),yes)
-    # Hm, with brew apxs this just has `libexec` instead of `libexec/apache2`
+    # Hm, with old brew apxs this just has `libexec` instead of
+    # `libexec/apache2`.
     # On Trusty it has the full path (${exec_prefix}/lib/apache2/modules)
+    #
     # On 10.13 Brew this is absolute and doesn't contain the ${prefix} pattern,
-    # but a FQP /usr/local/lib/httpd/modules
-    APACHE_MODULE_RELDIR=$(shell apxs -q | grep ^libexecdir | sed "s/libexecdir=.*}//g" | sed "sTlibexecdir=$(prefix)TTg" | sed "s/libexecdir=//g" )
-    #$(error "KK $(APACHE_MODULE_RELDIR) $(prefix)")
+    # but a FQP /usr/local/lib/httpd/modules. Which I guess is a bug (exp_ vs
+    # non-exp)
+    # And there is not var for just `/usr/local/`.
+    #
+    # If we are installing into Brew, the Prefix is /usr/local/Cellar/abc and
+    # this really needs to be dynamic and relative.
+    #   /usr/local/opt/apache2/lib/httpd/modules
+    #   apxs -q gives: libexecdir=/usr/local/lib/httpd/modules
+    #   we need: lib/httpd/modules
+    #   but apxs doesn't have any `/usr/local` prefix, all the variables are
+    #   more explicitly qualified.
+    # So we hardcode /usr/local /usr prefixes for now :-(
+    APACHE_MODULE_RELDIR3=$(shell apxs -q | grep ^libexecdir | sed "s/libexecdir=.*}//g" | sed "sTlibexecdir=$(prefix)TTg" | sed "s/libexecdir=//g" )
+    APACHE_MODULE_RELDIR2=$(subst /usr/local,,$(APACHE_MODULE_RELDIR3))
+    APACHE_MODULE_RELDIR=$(subst /usr,,$(APACHE_MODULE_RELDIR2))
+    APACHE_MODULE_INSTALL_DIR=${prefix}/${APACHE_MODULE_RELDIR}
   else
     ifeq ($(UNAME_S),Darwin)
-      APACHE_MODULE_RELDIR="/libexec/apache2"
+      APACHE_MODULE_INSTALL_DIR="$(prefix)/libexec/apache2"
     else # Linux: this may be different depending on the distro
-      APACHE_MODULE_RELDIR="/lib/apache2/modules"
+      APACHE_MODULE_INSTALL_DIR="$(prefix)/lib/apache2/modules"
     endif
   endif
-  APACHE_MODULE_INSTALL_DIR=$(prefix)$(APACHE_MODULE_RELDIR)
 endif
 
 ifeq ($(HEADER_FILES_INSTALL_DIR),)
