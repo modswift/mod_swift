@@ -117,21 +117,51 @@ export APACHE_CONFIG="${BUILD_DIR}/apache.conf"
 export MODULE_NAME="mods_${PRODUCT_NAME}"
 SA_MODULE_CONFIG_TEMPLATE_FILE="${MODULE_NAME}-template.conf"
 SA_MODULE_CONFIG_FILE="${MODULE_NAME}.conf"
-if [[ "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_TEMPLATE_FILE}" -nt "${APACHE_CONFIG}" || "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_FILE}" -nt "${APACHE_CONFIG}" ]]; then
+
+if [[ "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_TEMPLATE_FILE}" -nt "${APACHE_CONFIG}" ]]; then
   . swift-apache-genconfig --xcode
   rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
 
-  echo "Generated Apache config w/ module:"
+  echo "Generated Apache config w/ module template:"
   echo "  ${APACHE_CONFIG}"
+  echo "  ${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_TEMPLATE_FILE}"
+elif [[ "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_FILE}" -nt "${APACHE_CONFIG}" ]]; then
+  . swift-apache-genconfig --xcode
+  rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+
+  echo "Generated Apache config w/ module config:"
+  echo "  ${APACHE_CONFIG}"
+  echo "  ${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_FILE}"
 elif [[ -f "${APACHE_CONFIG}" ]]; then
-  echo "Apache config exists and is up to date:"
-  echo "  ${APACHE_CONFIG}"
+  # FIXME: this is wrong, we also need to check whether a template or a
+  #        config appeared or disappeared
+  #echo "Apache config exists and is up to date:"
+  #echo "  ${APACHE_CONFIG}"
+  # let us regenerate every time for now (FIXME)
+  . swift-apache-genconfig --xcode
+  rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
+  
+  if [[ -f "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_TEMPLATE_FILE}" ]]; then
+    echo "Regenerated Apache config w/ module template:"
+    echo "  ${APACHE_CONFIG}"
+    echo "  ${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_TEMPLATE_FILE}"
+  elif [[ -f "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_FILE}" ]]; then
+    echo "Regenerated Apache config w/ module config:"
+    echo "  ${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_FILE}"
+  else
+    echo "Regenerated generic Apache config:"
+    echo "  ${APACHE_CONFIG}"
+    echo "  No template at: ${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_TEMPLATE_FILE}"
+    echo "  No config   at: ${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_FILE}"
+  fi
 else
   . swift-apache-genconfig --xcode
   rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
 
   echo "Generated generic Apache config:"
   echo "  ${APACHE_CONFIG}"
+  echo "  No template at: ${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_TEMPLATE_FILE}"
+  echo "  No config   at: ${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_FILE}"
 fi
 
 if [[ "$SPM_BUILD_CONFIG" = "debug" ]]; then
