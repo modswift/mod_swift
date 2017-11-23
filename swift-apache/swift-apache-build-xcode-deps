@@ -117,6 +117,12 @@ export APACHE_CONFIG="${BUILD_DIR}/apache.conf"
 export MODULE_NAME="mods_${PRODUCT_NAME}"
 SA_MODULE_CONFIG_TEMPLATE_FILE="${MODULE_NAME}-template.conf"
 SA_MODULE_CONFIG_FILE="${MODULE_NAME}.conf"
+if [[ ! -f "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_FILE}" ]]; then
+  SA_MODULE_CONFIG_FILE="${MODULE_NAME#mods_}.conf"
+  if [[ ! -f "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_TEMPLATE_FILE}" ]]; then
+    SA_MODULE_CONFIG_TEMPLATE_FILE="${MODULE_NAME#mods_}-template.conf"
+  fi
+fi
 
 if [[ "${DOCROOT_BASEDIR}/${SA_MODULE_CONFIG_TEMPLATE_FILE}" -nt "${APACHE_CONFIG}" ]]; then
   . swift-apache-genconfig --xcode
