@@ -40,6 +40,8 @@
 
 ARGS="$@"
 
+verbose=no
+
 # check whether environment is sound
 
 EMBEDDED_VALIDATE=yes . swift-apache-validate
@@ -133,6 +135,10 @@ if [[ ! -f apache.conf ]]; then
     | sed "s#%CONFIGURATION_BUILD_DIR%#${CONFIGURATION_BUILD_DIR}#g" \
     > "${APACHE_CONFIG}"
   
+  if [[ "x$verbose" = "xyes" ]]; then
+    echo "swift-apache-genconfig: Generated: ${APACHE_CONFIG}"
+  fi
+  
   if [[ ${MODULE_NAME} != "mod_"* ]]; then
     echo >> "${APACHE_CONFIG}"
     # I don't know, this is weird
@@ -143,11 +149,27 @@ if [[ ! -f apache.conf ]]; then
     fi
   fi
   
-  MODULE_CONFIG_TEMPLATE_FILE="${MODULE_NAME}-template.conf"
+  MODULE_CONFIG_TEMPLATE_FILE="${DOCROOT_BASEDIR}/${MODULE_NAME}-template.conf"
   MODULE_CONFIG="${DOCROOT_BASEDIR}/${MODULE_NAME}.conf"
   
   if [[ ! -f "${MODULE_CONFIG}" ]]; then
+    MODULE_CONFIG="${DOCROOT_BASEDIR}/${MODULE_NAME#mods_}.conf"
+    if [[ ! -f "${MODULE_CONFIG_TEMPLATE_FILE}" ]]; then
+      MODULE_CONFIG_TEMPLATE_FILE="${DOCROOT_BASEDIR}/${MODULE_NAME#mods_}-template.conf"
+    fi
+  fi
+  
+  if [[ "x$verbose" = "xyes" ]]; then
+    echo "swift-apache-genconfig: Configs:"
+    echo "  ${MODULE_CONFIG_TEMPLATE_FILE}"
+    echo "  ${MODULE_CONFIG_FILE}"
+  fi
+  
+  if [[ ! -f "${MODULE_CONFIG}" ]]; then
     if [[ -f "${MODULE_CONFIG_TEMPLATE_FILE}" ]]; then
+      if [[ "x$verbose" = "xyes" ]]; then
+        echo "swift-apache-genconfig: eval module template: ${MODULE_CONFIG_TEMPLATE_FILE}"
+      fi
       MODULE_CONFIG_TEMPLATE="`cat ${MODULE_CONFIG_TEMPLATE_FILE}`"
       if [[ "$APACHE_CONFIG_TARGET_DIR" = /* ]]; then
         MODULE_CONFIG="${APACHE_CONFIG_TARGET_DIR}/module.conf"
@@ -185,7 +207,13 @@ if [[ ! -f apache.conf ]]; then
       echo >> "${APACHE_CONFIG}" "LoadSwiftModule ApacheMain ${ABS_BUILD_PRODUCT}"
     fi
     echo >> "${APACHE_CONFIG}" "Include ${MODULE_CONFIG}"
+    if [[ "x$verbose" = "xyes" ]]; then
+      echo "$0: included module specific config: ${MODULE_CONFIG}"
+    fi
   else
+    if [[ "x$verbose" = "xyes" ]]; then
+      echo "swift-apache-genconfig: no module specific config: ${MODULE_CONFIG}"
+    fi
     echo >> "${APACHE_CONFIG}"
     echo >> "${APACHE_CONFIG}" "LoadSwiftModule ApacheMain ${ABS_BUILD_PRODUCT}"
   fi
