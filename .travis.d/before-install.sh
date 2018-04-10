@@ -18,5 +18,5 @@ if [[ "$TRAVIS_OS_NAME" == "Linux" ]]; then
 else
   echo "OS: $TRAVIS_OS_NAME"
   brew update
-  brew install homebrew/httpd
+  brew install httpd
 fi
