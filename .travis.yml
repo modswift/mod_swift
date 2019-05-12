@@ -1,7 +1,9 @@
 language:  generic
 
 notifications:
-    slack: nozeio:LIFY1Jtkx0FRcLq3u1WliHRZ
+  slack:
+    rooms:
+      - apacheexpress:9z2IfvxZfENp0TFmiYCgyUKz
 
 matrix:
     include:
@@ -9,9 +11,9 @@ matrix:
           dist: trusty
           sudo: required
         - os:   osx
-          osx_image: xcode8.3
+          osx_image: xcode10.0
         - os:   osx
-          osx_image: xcode9.3
+          osx_image: xcode10.2
 
 before_install:
     - ./.travis.d/before-install.sh
