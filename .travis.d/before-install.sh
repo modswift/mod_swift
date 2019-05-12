@@ -17,6 +17,8 @@ if [[ "$TRAVIS_OS_NAME" == "Linux" ]]; then
     # cat /usr/include/apr-1.0/apr.h # testing
 else
   echo "OS: $TRAVIS_OS_NAME"
+  brew tap homebrew/core
+  brew tap homebrew/services
   brew update
   brew install httpd
 fi
