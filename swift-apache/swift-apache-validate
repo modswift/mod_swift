@@ -29,6 +29,7 @@ SWIFT_APACHE_VALIDATED=yes
 #   SWIFT_VERSION            - as emitted, e.g. 3.0.2 or 3.1
 #   SWIFT_MAJOR              - 3
 #   SWIFT_MINOR              - 1
+#   SWIFT_TOOLS_VERSION      - 4.2
 #   SWIFT_SUBMINOR_OPT       - empty or subminor if given (e.g. "" for 3.1)
 #   SWIFT_SUBMINOR           - subminor if given, else 0  (e.g. 0 for 3.1)
 #   APACHE_SERVER_CERT_DIR   - .e.g. $prefix/lib/mod_swift/certificates
@@ -180,6 +181,7 @@ SWIFT_SUBMINOR_OPT=${SWIFT_VERSION_LIST[2]}
 SWIFT_SUBMINOR=${SWIFT_SUBMINOR_OPT}
 if [[ "x${SWIFT_SUBMINOR}" = "x" ]]; then SWIFT_SUBMINOR=0; fi
 
+SWIFT_TOOLS_VERSION="${SWIFT_MAJOR}.${SWIFT_MINOR}"
 
 # do our work: parse arguments
 #   this is a little lame, because we require a single space ...

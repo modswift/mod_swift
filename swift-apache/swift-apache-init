@@ -26,6 +26,25 @@ rc=$?; if [ $rc -ne 0 ]; then exit $rc; fi
 
 # templates
 
+if [[ ${SWIFT_MAJOR} -gt 4 || ${SWIFT_MINOR} -gt 2 ]]; then
+read -r -d '' PACKAGE_TEMPLATE <<EOF
+// swift-tools-version:${SWIFT_TOOLS_VERSION}
+
+import PackageDescription
+
+let package = Package(
+    name: "%MODULE_NAME%",
+
+    dependencies: [
+      .package(url: "https://github.com/modswift/Apache.git", from: "0.5.0")
+    ],
+    
+    targets: [
+      .target(name: "%MODULE_NAME%", dependencies: [ "Apache" ])
+    ]    
+)
+EOF
+else
 read -r -d '' PACKAGE_TEMPLATE <<EOF
 // swift-tools-version:3.1
 
@@ -40,6 +59,7 @@ let package = Package(
     ]
 )
 EOF
+fi
 
 read -r -d '' APACHE_MAIN <<EOF
 // mod_swift on the ZeeZide
@@ -113,11 +133,11 @@ if ! test -f .gitignore; then
   echo "${GIT_IGNORE}" > .gitignore
 fi
 
-if ! test -d Sources; then
-  mkdir Sources
+if ! test -d Sources/${MODULE_NAME}; then
+  mkdir -p Sources/${MODULE_NAME}
   echo "${APACHE_MAIN}" \
     | sed "s#%MODULE_NAME%#${MODULE_NAME}#g"   \
-    > "Sources/${MODULE_NAME}.swift"
+    > "Sources/${MODULE_NAME}/${MODULE_NAME}.swift"
 else
   echo "Sources already setup, not generating."
 fi

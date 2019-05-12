@@ -228,7 +228,7 @@ if [[ -f "${SA_SCHEME_FILE}" && ! -f "${SA_SCHEME_TOUCH}" ]]; then
       # --subnode "/Scheme/LaunchAction/PathRunnable" --type attr -n runnableDebuggingMode -v '0' \
       # runnableDebuggingMode redefined
       xmlstarlet ed \
-        --subnode "/Scheme/LaunchAction" --type elem -n "PathRunnabl"e -v '' \
+        --subnode "/Scheme/LaunchAction" --type elem -n "PathRunnable" -v '' \
         --subnode "/Scheme/LaunchAction/PathRunnable" --type attr -n FilePath -v "${BUILD_DIR}/apache-binary" \
           \
         --subnode "/Scheme/LaunchAction" --type elem -n "CommandLineArguments" -v '' \
