@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ "$TRAVIS_OS_NAME" == "Linux" ]]; then
+if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
     sudo apt-get install -y  \
        libc6-dev make \
        autoconf libtool pkg-config \
