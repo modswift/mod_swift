@@ -44,7 +44,7 @@ jobs:
       - name: Select latest available Xcode
         uses: maxim-lobanov/setup-xcode@v1.2.1
         with:
-          xcode-version: 12.2
+          xcode-version: 13.2.1
       # Likely doesn't work anymore, I think Homebrew b0rked proper Apache
       # modules a while back. We might rather want to install Apache from
       # the sources.
