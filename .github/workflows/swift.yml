@@ -15,6 +15,7 @@ jobs:
         image:
           - swift:5.3.2-xenial
           - swift:5.3.2-bionic
+          - swift:5.6.1-bionic
     container: ${{ matrix.image }}
     steps:
       - name: Install SQLite & PG Dev
