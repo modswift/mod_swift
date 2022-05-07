@@ -4,18 +4,15 @@
 </h2>
 
 ![Apache 2](https://img.shields.io/badge/apache-2-yellow.svg)
-![Swift3](https://img.shields.io/badge/swift-3-blue.svg)
-![Swift4](https://img.shields.io/badge/swift-4-blue.svg)
-![Swift5](https://img.shields.io/badge/swift-5-blue.svg)
+![Swift](https://img.shields.io/badge/swift-5-blue.svg)
 ![macOS](https://img.shields.io/badge/os-macOS-green.svg?style=flat)
 ![tuxOS](https://img.shields.io/badge/os-tuxOS-green.svg?style=flat)
-![Travis](https://travis-ci.org/modswift/mod_swift.svg?branch=develop)
 
 **mod_swift** allows you to write native modules
 for the
 [Apache Web Server](https://httpd.apache.org)
 in the 
-[Swift 3](http://swift.org/)
+[Swift](http://swift.org/)
 programming language.
 **Server Side Swift the [right](http://www.alwaysrightinstitute.com/) way**.
 
@@ -41,6 +38,14 @@ You can find pretty neat mod_swift documentation over here:
 
 ### Status
 
+2022-05-07:
+- It hasn't been tested for a while, it should work, but may require
+  some tweaking.
+- On macOS, Homebrew AFAIK b0rked Apache modules quite a while ago,
+  presumably a custom Apache compilation is necessary on that (or some
+  other way to install Apache2, not Homebrew?).
+
+20xx-yy-zz:
 This is not a demo anymore, it actually seems to work quite well.
 
 ### Who
