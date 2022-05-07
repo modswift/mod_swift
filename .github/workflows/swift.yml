@@ -34,10 +34,8 @@ jobs:
         # cat /usr/include/apr-1.0/apr.h # testing
       - name: Checkout Repository
         uses: actions/checkout@v2
-      - name: Build Swift Debug Package
-        run: swift build -c debug
-      - name: Build Swift Release Package
-        run: swift build -c release
+      - name: Make
+        run: make all
   nextstep:
     runs-on: macos-latest
     steps:
@@ -56,7 +54,5 @@ jobs:
           brew install httpd
       - name: Checkout Repository
         uses: actions/checkout@v2
-      - name: Build Swift Debug Package
-        run: swift build -c debug
-      - name: Build Swift Release Package
-        run: swift build -c release
+      - name: Make
+        run: make all
