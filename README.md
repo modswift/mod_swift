@@ -47,6 +47,66 @@ You can find pretty neat mod_swift documentation over here:
 - 2017-06-12:
   - This is not a demo anymore, it actually seems to work quite well.
 
+
+### Quick Install
+
+```bash
+$ brew tap modswift/mod_swift
+$ brew install httpd mod_swift
+
+$ swift apache validate
+swift-driver version: 1.45.2 The Swift Apache build environment looks sound.
+
+  srcroot:   /Users/helge/tmp/mods_helloworld
+  module:    mods_helloworld
+  config:    debug
+  product:   /Users/helge/tmp/mods_helloworld/.build/mods_helloworld.so
+  apxs:      /opt/homebrew/bin/apxs
+  moddir:    /opt/homebrew/lib/httpd/modules
+  relmoddir: /
+  mod_swift: /opt/homebrew/opt/mod_swift
+  swift:     5.6.0
+  cert:      self-signed-mod_swift-localhost-server.crt
+  http/2:    yes
+```
+
+### HelloWorld Apache Module
+
+```bash
+$ mkdir mods_helloworld && cd mods_helloworld
+$ swift apache init
+The Swift Apache build environment looks sound.
+
+  module:    mods_helloworld
+  config:    debug
+  product:   /Users/helge/tmp/tests/mods_helloworld/.build/mods_helloworld.so
+  apxs:      /usr/local/bin/apxs
+  mod_swift: /usr/local/opt/mod_swift
+```
+
+```bash
+$ swift apache build
+Fetching https://github.com/modswift/Apache.git
+Fetching https://github.com/modswift/CApache.git
+Completed resolution in 3.65s
+Cloning https://github.com/modswift/CApache.git
+Resolving https://github.com/modswift/CApache.git at 2.0.1
+Cloning https://github.com/modswift/Apache.git
+Resolving https://github.com/modswift/Apache.git at 0.5.0
+[2/2] Compiling Swift Module 'mods_helloworld' (1 sources)
+
+$ ls -hl .build/mods_helloworld.so
+-rwxr-xr-x  1 helge  staff   173K 12 Mai 15:29 .build/mods_helloworld.so
+```
+
+```bash
+$ swift apache serve
+Note: DocRoot /usr/local/var/www/htdocs
+Starting Apache on port 8042/8442:
+GET /helloworld/ 200 715 - 0ms
+```
+
+
 ### Who
 
 **mod_swift** is brought to you by
