@@ -38,15 +38,14 @@ You can find pretty neat mod_swift documentation over here:
 
 ### Status
 
-2022-05-07:
-- It hasn't been tested for a while, it should work, but may require
-  some tweaking.
-- On macOS, Homebrew AFAIK b0rked Apache modules quite a while ago,
-  presumably a custom Apache compilation is necessary on that (or some
-  other way to install Apache2, not Homebrew?).
-
-20xx-yy-zz:
-This is not a demo anymore, it actually seems to work quite well.
+- 2022-05-08:
+  - Updated for macOS 12 M1 Homebrew. Back in a working state!
+  - Note that [Homebrew APRUtil](https://github.com/Homebrew/homebrew-core/pull/31799/commits/584a9faa5c2decf32f25bb9d5f028395bb93ab5f) 
+    only comes w/ the SQLite driver. To use other drivers with
+    [mod_dbd](http://docs.mod-swift.org/mod_dbd/), a manual install
+    is necessary.
+- 2017-06-12:
+  - This is not a demo anymore, it actually seems to work quite well.
 
 ### Who
 
@@ -56,3 +55,11 @@ We like feedback, GitHub stars, cool contract work,
 presumably any form of praise you can think of.
 
 There is a `#mod_swift` channel on the [Noze.io Slack](http://slack.noze.io).
+
+**Want to support my work**?
+Buy an app:
+[Past for iChat](https://apps.apple.com/us/app/past-for-ichat/id1554897185),
+[SVG Shaper](https://apps.apple.com/us/app/svg-shaper-for-swiftui/id1566140414),
+[Shrugs](https://shrugs.app/),
+[HMScriptEditor](https://apps.apple.com/us/app/hmscripteditor/id1483239744).
+You don't have to use it! 😀

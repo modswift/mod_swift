@@ -195,7 +195,7 @@ if [[ ! -x "${BUILD_DIR}/apache-binary" ]]; then
   if [[ ! -x "${HTTPD_PATH}" ]]; then
     echo 1>&2 "ERROR: Missing ${HTTPD_NAME}, did you?:"
     echo 1>&2
-    echo 1>&2 "    brew install homebrew/apache/httpd24 --with-mpm-event --with-http2"
+    echo 1>&2 "    brew install httpd"
     echo 1>&2 "    brew install helje5/mod_swift/mod_swift"
     echo 1>&2
     exit 44
