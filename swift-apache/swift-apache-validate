@@ -56,7 +56,7 @@ if ! hash apxs 2>/dev/null; then
   if [[ "${UNAME_S}" = "Darwin" ]]; then
     echo 1>&2 "ERROR: Missing Apache apxs, did you?:"
     echo 1>&2 
-    echo 1>&2 "    brew install homebrew/apache/httpd24 --with-mpm-event --with-http2"
+    echo 1>&2 "    brew install httpd"
     echo 1>&2 
   else
     echo 1>&2 "ERROR: Missing Apache apxs, did you?:"
