@@ -162,7 +162,8 @@ ifeq ($(APACHE_MODULE_INSTALL_DIR),)
     # So we hardcode /usr/local /usr prefixes for now :-(
     APACHE_MODULE_RELDIR3=$(shell apxs -q | grep ^libexecdir | sed "s/libexecdir=.*}//g" | sed "sTlibexecdir=$(prefix)TTg" | sed "s/libexecdir=//g" )
     APACHE_MODULE_RELDIR2=$(subst /usr/local,,$(APACHE_MODULE_RELDIR3))
-    APACHE_MODULE_RELDIR=$(subst /usr,,$(APACHE_MODULE_RELDIR2))
+    APACHE_MODULE_RELDIR4=$(subst /usr,,$(APACHE_MODULE_RELDIR2))
+    APACHE_MODULE_RELDIR=$(subst /opt/homebrew,,$(APACHE_MODULE_RELDIR4))
     APACHE_MODULE_INSTALL_DIR=${prefix}/${APACHE_MODULE_RELDIR}
   else
     ifeq ($(UNAME_S),Darwin)
