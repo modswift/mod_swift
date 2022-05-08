@@ -51,8 +51,8 @@ You can find pretty neat mod_swift documentation over here:
 ### Quick Install
 
 ```bash
-brew tap modswift/mod_swift
-brew install httpd mod_swift
+$ brew tap modswift/mod_swift
+$ brew install httpd mod_swift
 
 $ swift apache validate
 swift-driver version: 1.45.2 The Swift Apache build environment looks sound.
