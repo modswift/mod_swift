@@ -61,9 +61,7 @@ jobs:
         run: make install prefix=/usr/local
       - name: Build Test Apache Module
         run: |
-          echo "$TMPDIR"
-          ls /usr/local          
-          cd /tmp
+          cd $TMPDIR
           mkdir mods_helloworld && cd mods_helloworld
           swift apache init
           swift apache build
