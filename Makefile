@@ -4,8 +4,8 @@
 include xcconfig/config.make
 
 MAJOR=0
-MINOR=8
-SUBMINOR=7
+MINOR=9
+SUBMINOR=1
 
 PACKAGE = mod_swift
 CFILES  = mod_swift.c mod_swift_api.c
