@@ -57,3 +57,13 @@ jobs:
         uses: actions/checkout@v2
       - name: Make
         run: make all
+      - name: Install
+        run: make install prefix=/usr/local
+      - name: Build Test Apache Module
+        run: |
+          echo "$TMPDIR"
+          ls /usr/local          
+          cd /tmp
+          mkdir mods_helloworld && cd mods_helloworld
+          swift apache init
+          swift apache build
