@@ -107,12 +107,14 @@ CFLAGS="${CFLAGS} -Xcc -pthread"
 if [[ "${UNAME_S}" = "Darwin" ]]; then
   SWIFTC=`xcrun --toolchain swift-latest -f swiftc`
   
+  # 2022-05-08: Not necessary anymore, actually bad on M1, due to hardcoded
+  #             deployment target.
   # required on macOS 10.11 w/ Xcode 8.2.1 (else Swift does 10.9?)
-  TARGET_VERSION="10.10" 
-  DEPLOYMENT_TARGET="x86_64-apple-macosx${TARGET_VERSION}"
-  if [ -n "${DEPLOYMENT_TARGET}" ]; then
-    PLATFORM_FLAGS="${PLATFORM_FLAGS} -target ${DEPLOYMENT_TARGET}"
-  fi
+  # TARGET_VERSION="10.10" 
+  # DEPLOYMENT_TARGET="x86_64-apple-macosx${TARGET_VERSION}"
+  # if [ -n "${DEPLOYMENT_TARGET}" ]; then
+  #   PLATFORM_FLAGS="${PLATFORM_FLAGS} -target ${DEPLOYMENT_TARGET}"
+  # fi
   
   SDK="`xcrun -sdk macosx --show-sdk-path`"
   if [ -n "${SDK}" ]; then
